@@ -1,3 +1,16 @@
+# Folders
+*annarchy*/
+results/*
+.idea/*
+testing/*
+
+# Files
+*scratch_*
+*_old*
+*.gif
+*.pdf
+*.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
