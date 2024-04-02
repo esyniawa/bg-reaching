@@ -658,3 +658,19 @@ class PlanarArms:
         norm = np.linalg.norm(diff_vector)
 
         return angle, norm
+
+    @staticmethod
+    def calc_position_from_motor_vector(init_pos: np.ndarray[float, float], angle: float, norm: float,
+                                        arm: str, radians: bool = False):
+
+        x, y = init_pos
+
+        if not radians:
+            angle = np.radians(angle)
+
+        new_position = np.array((
+            norm * np.cos(angle) + x,
+            norm * np.sin(angle) + y
+        ))
+
+        return new_position

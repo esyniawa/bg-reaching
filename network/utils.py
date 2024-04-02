@@ -20,6 +20,17 @@ def gauss(x: np.ndarray, mu: float, sigma: float, norm: bool = True, limit: floa
     return res
 
 
+def distance(n: int, index: int, scal: float = 1.0):
+    ret = np.zeros(n)
+    for i in range(n):
+        res = abs(i-index)
+        if res > n/2:
+            ret[i] = n - res
+        else:
+            ret[i] = res
+    return scal * ret
+
+
 def create_state_space(x_bound: tuple[int, int],
                        y_bound: tuple[int, int],
                        step_size_x: float,

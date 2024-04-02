@@ -1,6 +1,26 @@
 import ANNarchy as ann
 
 # Neuron definitions
+TargetNeuron = ann.Neuron(
+    parameters="""
+    baseline = 0.0
+    phi = 0.0 : population
+    """,
+    equations="""
+    r = baseline + phi * Uniform(-1.0,1.0)
+    """
+)
+
+OutputNeuron = ann.Neuron(
+    parameters="""
+    baseline = 0.0
+    phi = 0.0 : population
+    """,
+    equations="""
+    r = sum(exc) + baseline + phi * Uniform(-1.0,1.0)
+    """
+)
+
 BaselineNeuron = ann.Neuron(
     parameters="""
         tau_up = 5.0 : population
@@ -12,8 +32,8 @@ BaselineNeuron = ann.Neuron(
         base = baseline + noise * Uniform(-1.0,1.0): min=0.0
         dr/dt = if (baseline>0.01): (base-r)/tau_up else: -r/tau_down : min=0.0
     """,
-    name = "Baseline Neuron",
-    description = "Neuron with baseline to be set. "
+    name="Baseline Neuron",
+    description="Time-dynamic neuron with baseline to be set. "
 )
 
 LinearNeuron = ann.Neuron(
@@ -39,7 +59,7 @@ StriatumD1Neuron = ann.Neuron(
         alpha = 0.8 : population
     """,
     equations="""
-        tau*dmp/dt + mp = sum(mod) * (sum(exc) - sum(inh) ) + noise*Uniform(-1.0,1.0)
+        tau*dmp/dt + mp = sum(mod) * (sum(exc) - sum(inh)) + noise*Uniform(-1.0,1.0)
         r = lesion*mp + baseline: min = 0.0
 
         r_mean = alpha * r_mean + (1 - alpha) * r
@@ -79,9 +99,9 @@ ReversedSynapse = ann.Synapse(
 )
 
 # DA_typ = 1  ==> D1 type  DA_typ = -1 ==> D2 type
-DAPostCovarianceNoThreshold = ann.Synapse(
+PostCovarianceNoThreshold = ann.Synapse(
     parameters="""
-        tau=1000.0 : projection
+        tau=50.0 : projection
         tau_alpha=10.0 : projection
         regularization_threshold=1.0 : projection
         baseline_dopa = 0.1 : projection
@@ -93,13 +113,9 @@ DAPostCovarianceNoThreshold = ann.Synapse(
     """,
     equations="""
         tau_alpha*dalpha/dt  + alpha = pos(post.mp - regularization_threshold)
-        dopa_sum = 2.0*(post.sum(dopa) - baseline_dopa)
-        trace = pos(post.r -  mean(post.r) - threshold_post) * (pre.r - mean(pre.r) - threshold_pre)
-	    condition_0 = if (trace>0.0) and (w >0.0): 1 else: 0
-        dopa_mod =  if (DA_type*dopa_sum>0): DA_type*K_burst*dopa_sum
-                    else: condition_0*DA_type*K_dip*dopa_sum
-        delta = (dopa_mod* trace - alpha*pos(post.r - mean(post.r) - threshold_post)*pos(post.r - mean(post.r) - threshold_post))
-        tau*dw/dt = delta : min=0
+        trace = pos(post.r -  mean(post.r) - threshold_post) * pos(pre.r - threshold_pre)
+        tau * dweight/dt = trace - alpha*pos(post.r - mean(post.r) - threshold_post)
+        w = weight : min=0
     """
 )
 
