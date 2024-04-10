@@ -4,14 +4,15 @@ import numpy as np
 import os
 
 
-def ceil(a: float, precision: int =0):
+def ceil(a: float, precision: int = 0):
     return np.true_divide(np.ceil(a * 10**precision), 10**precision)
 
 
 class PopMonitor(object):
     def __init__(self, populations: tuple | list,
                  variables: tuple | list | None = None,
-                 sampling_rate: float = 2.0):
+                 sampling_rate: float = 2.0,
+                 auto_start: bool = False):
 
         # define variables to track
         if variables is not None:
@@ -25,7 +26,7 @@ class PopMonitor(object):
         self.monitors = []
 
         for i, pop in enumerate(populations):
-            self.monitors.append(ann.Monitor(pop, self.variables[i], period=sampling_rate, start=False))
+            self.monitors.append(ann.Monitor(pop, self.variables[i], period=sampling_rate, start=auto_start))
 
     def start(self):
         for monitor in self.monitors:
@@ -39,11 +40,12 @@ class PopMonitor(object):
         for monitor in self.monitors:
             monitor.resume()
 
-    def get(self, delete: bool = True):
+    def get(self, delete: bool = True, reshape: bool = True):
         res = {}
 
         for i, monitor in enumerate(self.monitors):
-            res[self.variables[i] + '_' + monitor.object.name] = monitor.get(self.variables[i], keep=not delete)
+            res[self.variables[i] + '_' + monitor.object.name] = monitor.get(self.variables[i],
+                                                                             keep=not delete, reshape=reshape)
 
         return res
 
@@ -52,7 +54,7 @@ class PopMonitor(object):
             os.makedirs(folder)
 
         for i, monitor in enumerate(self.monitors):
-            rec = monitor.get(self.variables[i], keep=not delete)
+            rec = monitor.get(self.variables[i], keep=not delete, reshape=True)
             np.save(folder + self.variables[i] + '_' + monitor.object.name, rec)
 
     def load(self, folder):
@@ -84,7 +86,7 @@ class PopMonitor(object):
     def plot_rates(self, plot_order: tuple[int, int],
                    plot_type: str = 'Plot',
                    fig_size: tuple[float, float] | list[float, float] = (5, 5),
-                   save_name: str = None):
+                   save_name: str = None) -> None:
 
         """
         Plots 2D populations rates.
@@ -96,19 +98,23 @@ class PopMonitor(object):
         """
 
         ncols, nrows = plot_order
-        results = self.get(delete=False)
+        results = self.get(delete=False, reshape=True)
 
         fig = plt.figure(figsize=fig_size)
         for i, key in enumerate(results):
-            if results[key].ndim > 2:
-                results[key] = PopMonitor._reshape(results[key])
-
             plt.subplot(nrows, ncols, i + 1)
             if plot_type == 'Plot':
+                if results[key].ndim > 2:
+                    results[key] = PopMonitor._reshape(results[key])
+
                 plt.plot(results[key])
                 plt.ylabel('Activity')
                 plt.xlabel(self.variables[i], loc='right')
+
             elif plot_type == 'Matrix':
+                if results[key].ndim > 3:
+                    results[key] = PopMonitor._reshape(results[key], dim=3)
+
                 res_max = np.amax(abs(results[key]))
                 img = plt.contourf(results[key].T, cmap='RdBu', vmin=-res_max, vmax=res_max)
                 plt.colorbar(img, label=self.variables[i], orientation='horizontal')
@@ -138,7 +144,7 @@ class PopMonitor(object):
         import matplotlib.animation as animation
 
         ncols, nrows = plot_order
-        results = self.get(delete=False)
+        results = self.get(delete=False, reshape=True)
 
         if isinstance(plot_types, str):
             plot_types = [plot_types] * len(results)
@@ -147,17 +153,24 @@ class PopMonitor(object):
         ls = []
 
         for i, key in enumerate(results):
-            ax = fig.add_subplot(nrows, ncols, i + 1)
-            ax.set_title(self.monitors[i].object.name, loc='left')
+            plot_type = plot_types[i]
+            if plot_type == 'Matrix':
 
-            if plot_types[i] == 'Matrix':
+                ax = fig.add_subplot(nrows, ncols, i + 1)
+                ax.set_title(self.monitors[i].object.name, loc='left')
+
                 if results[key].ndim > 3:
                     results[key] = PopMonitor._reshape(results[key], dim=3)
                 res_max = np.amax(abs(results[key]))
 
-                l, _ = ax.contourf(results[key][t_init, :, :], vmin=-res_max, vmax=res_max, cmap='RdBu')
+                l = ax.imshow(results[key][t_init], vmin=-res_max, vmax=res_max, cmap='RdBu',
+                              origin='lower', interpolation='none')
 
-            elif plot_types[i] == 'Bar':
+            elif plot_type == 'Bar':
+
+                ax = fig.add_subplot(nrows, ncols, i + 1)
+                ax.set_title(self.monitors[i].object.name, loc='left')
+
                 if results[key].ndim > 2:
                     results[key] = PopMonitor._reshape(results[key])
 
@@ -170,9 +183,13 @@ class PopMonitor(object):
                 ax.set_xlabel(self.variables[i], loc='right')
                 ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
 
-            elif plot_types[i] == 'Plot':
+            elif plot_type == 'Plot':
+
+                ax = fig.add_subplot(nrows, ncols, i + 1)
+                ax.set_title(self.monitors[i].object.name, loc='left')
+
                 if results[key].ndim > 3:
-                    results[key] = PopMonitor._reshape(results[key])
+                    results[key] = PopMonitor._reshape(results[key], dim=3)
 
                 res_max = np.amax(results[key])
 
@@ -182,13 +199,28 @@ class PopMonitor(object):
                 ax.set_xlabel(self.variables[i], loc='right')
                 ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
 
-            elif plot_types[i] is None:
+            elif plot_type == 'Polar':
+
+                ax = fig.add_subplot(nrows, ncols, i + 1, projection='polar')
+                ax.set_title(self.monitors[i].object.name, loc='left')
+
+                res_max = np.amax(np.sqrt(results[key][:, 1] ** 2 + results[key][:, 2] ** 2))
+
+                if results[key].ndim > 2:
+                    results[key] = PopMonitor._reshape(results[key])
+
+                rad = (0, np.radians(results[key][t_init, 0]))
+                r = (0, np.sqrt(results[key][t_init, 1] ** 2 + results[key][t_init, 2] ** 2))
+                l = ax.plot(rad, r)
+                ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
+
+            elif plot_type is None:
                 pass
 
             else:
                 raise AssertionError('You must clarify which type of plot do you want!')
 
-            ls.append((key, l))
+            ls.append((key, l, plot_type))
 
         # time length
         val_max = results[key].shape[0] - 1
@@ -206,21 +238,26 @@ class PopMonitor(object):
             def update(val):
                 t = int(time_slider.val)
                 time_slider.valtext.set_text(t)
-                for i, key, plot in enumerate(ls):
+                for key, plot, plt_type in ls:
 
-                    if plot_types[i] == 'Matrix':
+                    if plt_type == 'Matrix':
                         plot.set_data(results[key][t, :, :])
 
-                    elif plot_types[i] == 'Plot':
+                    elif plt_type == 'Plot':
                         if results[key].ndim == 3:
                             for j, line in plot:
                                 line.set_ydata(results[key][t, :])
                         else:
                             plot[0].set_ydata(results[key][t, :])
 
-                    elif plot_types[i] == 'Bar':
+                    elif plt_type == 'Bar':
                         for j, bar in enumerate(plot):
                             bar.set_height(results[key][t, j])
+
+                    elif plt_type == 'Polar':
+                        for line in plot:
+                            line.set_xdata((0, np.radians(results[key][t, 0])))
+                            line.set_ydata((0, np.sqrt(results[key][t, 1] ** 2 + results[key][t, 2] ** 2)))
 
             time_slider.on_changed(update)
 
@@ -230,22 +267,27 @@ class PopMonitor(object):
                 time_slider.valtext.set_text(t)
                 time_slider.val = t
                 subplots = []
-                for key, plot in ls:
+                for key, plot, plt_type in ls:
                     subplots.append(plot)
 
-                    if plot_types[i] == 'Matrix':
-                        plot.set_data(results[key][t, :, :])
+                    if plt_type == 'Matrix':
+                        plot.set_data(results[key][t])
 
-                    elif plot_types[i] == 'Plot':
+                    elif plt_type == 'Plot':
                         if results[key].ndim == 3:
                             for j, line in plot:
                                 line.set_ydata(results[key][t, :])
                         else:
                             plot[0].set_ydata(results[key][t, :])
 
-                    elif plot_types[i] == 'Bar':
+                    elif plt_type == 'Bar':
                         for j, bar in enumerate(plot):
                             bar.set_height(results[key][t, j])
+
+                    elif plt_type == 'Polar':
+                        for line in plot:
+                            line.set_xdata((0, np.radians(results[key][t, 0])))
+                            line.set_ydata((0, np.sqrt(results[key][t, 1] ** 2 + results[key][t, 2] ** 2)))
 
                 return subplots
 

@@ -51,15 +51,10 @@ def create_state_space(x_bound: tuple[int, int],
 
 def bivariate_gauss(mu: tuple[float, float],
                     sigma: float,
-                    x_bound: tuple[int, int],
-                    y_bound: tuple[int, int],
-                    step_size_x: float,
-                    step_size_y: float,
+                    xy: np.ndarray,
                     norm: bool = False, plot: bool = False, limit: float | None = None):
 
     from scipy.stats import multivariate_normal
-
-    xy = create_state_space(x_bound, y_bound, step_size_x, step_size_y)
 
     rv = multivariate_normal(mu, cov=sigma * np.identity(2))
     a = rv.pdf(xy)
@@ -79,18 +74,3 @@ def bivariate_gauss(mu: tuple[float, float],
         plt.show()
 
     return a
-
-
-if __name__ == '__main__':
-
-    bivariate_gauss(mu=(5.2, 8.3),
-                    sigma=20.0,
-                    x_bound=(-100, 100),
-                    y_bound=(-10, 200),
-                    step_size_x=2,
-                    step_size_y=2,
-                    plot=True,
-                    norm=True,
-                    limit=0.4)
-
-    gauss(np.linspace(0, 11, 10), 5., 0.5, norm=True, plot=True)

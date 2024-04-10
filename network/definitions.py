@@ -13,11 +13,10 @@ TargetNeuron = ann.Neuron(
 
 OutputNeuron = ann.Neuron(
     parameters="""
-    baseline = 0.0
-    phi = 0.0 : population
+    scale = 1.0 : population
     """,
     equations="""
-    r = sum(exc) + baseline + phi * Uniform(-1.0,1.0)
+        r = if sum(norm) > 0.0: scale * sum(exc) / sum(norm) else: scale * sum(exc)
     """
 )
 
@@ -41,12 +40,10 @@ LinearNeuron = ann.Neuron(
         tau = 10.0 : population
         baseline = 0.0 : population
         noise = 0.0 : population
-        lesion = 1.0 : population
-        alpha = 0.8 : population
     """,
     equations="""
         tau*dmp/dt + mp = sum(exc) - sum(inh) + noise*Uniform(-1.0,1.0)
-        r = lesion*mp + baseline : min=0.0 
+        r = mp + baseline : min=0.0 
     """
 )
 
@@ -55,34 +52,25 @@ StriatumD1Neuron = ann.Neuron(
         tau = 10.0 : population
         baseline = 0.0 : population
         noise = 0.0 : population
-        lesion = 1.0 : population
-        alpha = 0.8 : population
     """,
     equations="""
         tau*dmp/dt + mp = sum(mod) * (sum(exc) - sum(inh)) + noise*Uniform(-1.0,1.0)
-        r = lesion*mp + baseline: min = 0.0
-
-        r_mean = alpha * r_mean + (1 - alpha) * r
+        r = mp + baseline: min = 0.0
     """
 )
+
 
 DopamineNeuron = ann.Neuron(
     parameters="""
         tau = 10.0 : population
-        firing = 0 : population
-        inhibition = 0.0 : population
-        baseline = 0.0 : population
-        exc_threshold = 0.0 : population
-        factor_inh = 10.0 : population
+        baseline = 0.1 : population
+        firing = 0 : population, bool
     """,
     equations="""
-        ex_in = if (sum(exc)>exc_threshold): 1 else: 0
-        s_inh = sum(inh)
-        aux =   if (firing>0): 
-                    (ex_in)*(pos(1.0-baseline-s_inh) + baseline) + (1-ex_in)*(-factor_inh*sum(inh))  
-                else: baseline
+        aux =   if (firing>0): (1. - baseline)  
+                else: 0.0
         tau*dmp/dt + mp =  aux
-        r = if (mp>0.0): mp else: 0.0
+        r = mp: min=0.0
     """
 )
 
@@ -108,14 +96,14 @@ PostCovarianceNoThreshold = ann.Synapse(
         K_burst = 1.0 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection
-        threshold_pre=0.0 : projection
+        threshold_pre=0.05 : projection
         threshold_post=0.0 : projection
     """,
     equations="""
         tau_alpha*dalpha/dt  + alpha = pos(post.mp - regularization_threshold)
         trace = pos(post.r -  mean(post.r) - threshold_post) * pos(pre.r - threshold_pre)
         tau * dweight/dt = trace - alpha*pos(post.r - mean(post.r) - threshold_post)
-        w = weight : min=0
+        w = weight : min=0.0
     """
 )
 
@@ -124,25 +112,32 @@ PreCovariance_inhibitory = ann.Synapse(
     parameters="""
     tau = 1000.0 : projection
     DA_type = 1 : projection
-    threshold_pre = 0.0 : projection
+    threshold_pre = 0.05 : projection
     threshold_post = 0.0 : projection
     """,
     equations="""
         trace = pos(pre.r - threshold_pre) * (mean(post.r) - post.r - threshold_post)
-        tau * dweight/dt = DA_type * trace
-        w = weight : min=0
+        dopa_mod = post.sum(dopa)
+        tau * dweight/dt = dopa_mod * trace
+        w = dopa_mod * weight: min=0
+    """
+)
+
+STN_Synapse = ann.Synapse(
+    equations="""
+        dopa_mod = post.sum(dopa)
+        w = dopa_mod * w: min=0.0
     """
 )
 
 DAPrediction = ann.Synapse(
     parameters="""
-        tau = 100000.0 : projection
-        baseline_dopa = 0.1 : projection
-   """,
-   equations="""
-       aux = if (post.sum(exc)>0): 1.0 else: 3.0
-       delta = aux*pos(post.r - baseline_dopa)*pos(pre.r - mean(pre.r))
-       tau*dw/dt = delta : min=0
+    tau = 100000.0 : projection
+    baseline_dopa = 0.1 : projection
+    """,
+    equations="""
+        aux = if (post.sum(exc)>0): 1.0 else: 3.0
+        delta = aux*pos(post.r - baseline_dopa)*pos(pre.r - mean(pre.r))
+        tau*dw/dt = delta : min=0
    """
 )
-
