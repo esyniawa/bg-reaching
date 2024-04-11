@@ -153,7 +153,10 @@ class PopMonitor(object):
         ls = []
 
         for i, key in enumerate(results):
+
+            # define type of the plot
             plot_type = plot_types[i]
+
             if plot_type == 'Matrix':
 
                 ax = fig.add_subplot(nrows, ncols, i + 1)
@@ -214,6 +217,23 @@ class PopMonitor(object):
                 l = ax.plot(rad, r)
                 ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
 
+            elif plot_type == 'Line':
+
+                ax = fig.add_subplot(nrows, ncols, i + 1)
+                ax.set_title(self.monitors[i].object.name, loc='left')
+
+                if results[key].ndim > 2:
+                    results[key] = PopMonitor._reshape(results[key], dim=3)
+
+                res_max = np.amax(results[key])
+
+                # plotting
+                ax.plot(results[key])
+                l = ax.plot(results[key][t_init], marker='x', color='r')
+                ax.set_ylabel('Activity')
+                ax.set_xlabel('t', loc='right')
+                ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
+
             elif plot_type is None:
                 pass
 
@@ -259,6 +279,10 @@ class PopMonitor(object):
                             line.set_xdata((0, np.radians(results[key][t, 0])))
                             line.set_ydata((0, np.sqrt(results[key][t, 1] ** 2 + results[key][t, 2] ** 2)))
 
+                    elif plt_type == 'Line':
+                        plot[0].set_ydata(results[key][t])
+                        plot[0].set_xdata(t)
+
             time_slider.on_changed(update)
 
             plt.show()
@@ -289,6 +313,10 @@ class PopMonitor(object):
                             line.set_xdata((0, np.radians(results[key][t, 0])))
                             line.set_ydata((0, np.sqrt(results[key][t, 1] ** 2 + results[key][t, 2] ** 2)))
 
+                    elif plt_type == 'Line':
+                        plot[0].set_ydata(results[key][t])
+                        plot[0].set_xdata(t)
+
                 return subplots
 
             folder, _ = os.path.split(save_name)
@@ -297,8 +325,12 @@ class PopMonitor(object):
 
             ani = animation.FuncAnimation(fig, update_animate, frames=np.arange(0, val_max))
 
-            writergif = animation.PillowWriter(fps=frames_per_sec)
-            ani.save(save_name + '.gif', writer=writergif)
+            if save_name[-3:] == 'mp4':
+                writer = animation.FFMpegWriter(fps=frames_per_sec)
+            else:
+                writer = animation.PillowWriter(fps=frames_per_sec)
+
+            ani.save(save_name, writer=writer)
             plt.close(fig)
 
     def weight_difference(self,

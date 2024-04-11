@@ -1,22 +1,18 @@
 import ANNarchy as ann
 
 # Neuron definitions
-TargetNeuron = ann.Neuron(
+PoolingNeuron = ann.Neuron(
     parameters="""
-    baseline = 0.0
-    phi = 0.0 : population
+    r_scale = 1.0 : population
     """,
     equations="""
-    r = baseline + phi * Uniform(-1.0,1.0)
+        r = r_scale * sum(exc)
     """
 )
 
 OutputNeuron = ann.Neuron(
-    parameters="""
-    scale = 1.0 : population
-    """,
     equations="""
-        r = if sum(norm) > 0.0: scale * sum(exc) / sum(norm) else: scale * sum(exc)
+        r = if sum(norm) > 0.0: sum(exc) / sum(norm) else: sum(exc)
     """
 )
 
@@ -59,7 +55,6 @@ StriatumD1Neuron = ann.Neuron(
     """
 )
 
-
 DopamineNeuron = ann.Neuron(
     parameters="""
         tau = 10.0 : population
@@ -92,9 +87,6 @@ PostCovarianceNoThreshold = ann.Synapse(
         tau=50.0 : projection
         tau_alpha=10.0 : projection
         regularization_threshold=1.0 : projection
-        baseline_dopa = 0.1 : projection
-        K_burst = 1.0 : projection
-        K_dip = 0.4 : projection
         DA_type = 1 : projection
         threshold_pre=0.05 : projection
         threshold_post=0.0 : projection
@@ -124,9 +116,12 @@ PreCovariance_inhibitory = ann.Synapse(
 )
 
 STN_Synapse = ann.Synapse(
+    parameters="""
+        weight = 1.0 : projection
+    """,
     equations="""
         dopa_mod = post.sum(dopa)
-        w = dopa_mod * w: min=0.0
+        w = dopa_mod * weight: min=0.0
     """
 )
 

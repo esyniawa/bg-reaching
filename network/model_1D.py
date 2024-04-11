@@ -28,7 +28,7 @@ M1.noise = 0.01
 M1.baseline = 0.0
 
 # output population
-Out_PopCode_Pooling = ann.Population(geometry=parameter_1D['dim_motor'], neuron=OutputNeuron, name='PopCode')
+Out_PopCode_Pooling = ann.Population(geometry=parameter_1D['dim_motor'], neuron=PoolingNeuron, name='PopCode')
 Out = ann.Population(geometry=3, neuron=OutputNeuron, name='Output')
 
 # Projections
@@ -46,7 +46,7 @@ StrD1_SNr = ann.Projection(pre=StrD1, post=SNr, target='inh', synapse=PreCovaria
 w_StrD1_SNr = w_ones_to_all(preDim=StrD1.geometry, postDim=SNr.geometry, weight=0.0)
 StrD1_SNr.connect_from_matrix(w_StrD1_SNr)
 
-STN_SNr = ann.Projection(pre=STN, post=SNr, target='exc', name='STN_SNr')
+STN_SNr = ann.Projection(pre=STN, post=SNr, target='exc', name='STN_SNr', synapse=STN_Synapse)
 w_stn = column_wise_connection(preDim=parameter_1D['dim_motor'], postDim=SNr.geometry)
 STN_SNr.connect_from_matrix(w_stn)
 

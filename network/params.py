@@ -8,8 +8,8 @@ parameter_1D = {
     'x_reaching_space_limits': (-300, 300),
     'y_reaching_space_limits': (0, 300),
 
-    'x_step_size': 10.,
-    'y_step_size': 10.,
+    'x_step_size': 20.,
+    'y_step_size': 20.,
 
     'starting_points': [(-200, 50), (-100, 50), (0, 50), (100, 50), (200, 50)],
     'reaching_points': [(-250, 200), (-200, 200), (-150, 200), (-100, 200), (-50, 200),
@@ -22,7 +22,7 @@ parameter_1D['motor_orientations'] = np.linspace(0, 180, parameter_1D['dim_motor
 
 parameter_1D['dim_s1'] = len(parameter_1D['starting_points'])
 parameter_1D['sig_s1'] = 50.  # in [mm]
-parameter_1D['sig_pm'] = 10.  # in [mm]
+parameter_1D['sig_pm'] = 200.  # in [mm]
 
 parameter_1D['sig_stn'] = 10.  # in [°]
 
