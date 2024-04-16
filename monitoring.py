@@ -151,6 +151,7 @@ class PopMonitor(object):
 
         fig = plt.figure(figsize=fig_size)
         ls = []
+        # fig.subplots_adjust(left=1, bottom=1, right=1, top=1, wspace=None, hspace=None)
 
         for i, key in enumerate(results):
 
@@ -216,6 +217,7 @@ class PopMonitor(object):
                 r = (0, np.sqrt(results[key][t_init, 1] ** 2 + results[key][t_init, 2] ** 2))
                 l = ax.plot(rad, r)
                 ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
+                ax.set_ylabel([])
 
             elif plot_type == 'Line':
 

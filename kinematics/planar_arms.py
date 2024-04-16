@@ -29,6 +29,11 @@ class PlanarArms:
                  radians: bool = False):
 
         """Constructor: initialize current joint angles, positions and trajectories"""
+        if isinstance(init_angles_left, tuple | list):
+            init_angles_left = np.array(init_angles_left)
+        if isinstance(init_angles_right, tuple | list):
+            init_angles_right = np.array(init_angles_right)
+
         self.angles_left = self.check_values(init_angles_left, radians)
         self.angles_right = self.check_values(init_angles_right, radians)
 
@@ -177,19 +182,25 @@ class PlanarArms:
             return np.degrees((theta1, theta2))
 
     @staticmethod
-    def __cos_space(start: np.ndarray, stop: np.ndarray, num: int):
+    def __cos_space(start: float | np.ndarray, stop: float | np.ndarray, num: int):
         """
         For the calculation of gradients and trajectories. Derivation of this function is sin(x),
         so that the maximal change in the middle of the trajectory.
         """
-        if not start.size == stop.size:
-            raise ValueError('Start and stop vector must have the same dimensions.')
+
+        if isinstance(start, np.ndarray) and isinstance(stop, np.ndarray):
+            if not start.size == stop.size:
+                raise ValueError('Start and stop vector must have the same dimensions.')
 
         # calc changes
         offset = stop - start
 
         # function to modulate the movement.
-        x_lim = np.repeat(np.pi, repeats=start.size)
+        if isinstance(start, np.ndarray):
+            x_lim = np.repeat(np.pi, repeats=start.size)
+        else:
+            x_lim = np.pi
+
         x = - np.cos(np.linspace(0, x_lim, num, endpoint=True)) + 1.0
         x /= np.amax(x)
 
@@ -285,6 +296,80 @@ class PlanarArms:
                 self.end_effector_left.append(PlanarArms.forward_kinematics(arm='left',
                                                                             thetas=delta_theta,
                                                                             radians=True)[:, -1])
+                self.end_effector_right.append(self.end_effector_right[-1])
+
+                if break_at == j:
+                    break
+
+            # set current angle to the new thetas
+            self.angles_left = self.trajectory_thetas_left[-1]
+
+        else:
+            raise ValueError('Please specify if the arm is right or left!')
+
+    def change_position_straight(self, moving_arm: str,
+                                 new_position: np.ndarray,
+                                 num_iterations: int = 100,
+                                 break_at: None | int = None) :
+
+        """
+        Change the joint angle of one arm to a new position.
+        """
+
+        if moving_arm == 'right':
+            current_pos = self.end_effector_right[-1]
+
+            angle, distance = PlanarArms.calc_motor_vector(init_pos=current_pos, end_pos=new_position,
+                                                           arm=moving_arm)
+
+            trajectory = self.__cos_space(start=0.0, stop=distance, num=num_iterations)
+
+            for j, delta_distance in enumerate(trajectory):
+                new_pos = PlanarArms.calc_position_from_motor_vector(init_pos=current_pos, angle=angle,
+                                                                     norm=delta_distance, arm=moving_arm, radians=False)
+
+                new_theta = PlanarArms.inverse_kinematics(arm=moving_arm, end_effector=new_pos,
+                                                          starting_angles=self.trajectory_thetas_right[-1],
+                                                          radians=True)
+
+                self.trajectory_gradient_right.append(new_theta - self.trajectory_thetas_right[-1])
+                self.trajectory_gradient_left.append(np.array((0, 0)))
+
+                self.trajectory_thetas_right.append(new_theta)
+                self.trajectory_thetas_left.append(self.angles_left)
+
+                self.end_effector_right.append(new_pos)
+                self.end_effector_left.append(self.end_effector_left[-1])
+
+                if break_at == j:
+                    break
+
+            # set current angle to the new thetas
+            self.angles_right = self.trajectory_thetas_right[-1]
+
+        elif moving_arm == 'left':
+            current_pos = self.end_effector_right[-1]
+
+            angle, distance = PlanarArms.calc_motor_vector(init_pos=current_pos, end_pos=new_position,
+                                                           arm=moving_arm)
+
+            trajectory = self.__cos_space(start=0.0, stop=distance, num=num_iterations)
+
+            for j, delta_distance in enumerate(trajectory):
+                new_pos = PlanarArms.calc_position_from_motor_vector(init_pos=current_pos, angle=angle,
+                                                                     norm=delta_distance, arm=moving_arm, radians=False)
+
+                new_theta = PlanarArms.inverse_kinematics(arm=moving_arm, end_effector=new_pos,
+                                                          starting_angles=self.trajectory_thetas_left[-1],
+                                                          radians=True)
+
+                self.trajectory_gradient_left.append(new_theta - self.trajectory_thetas_left[-1])
+                self.trajectory_gradient_right.append(np.array((0, 0)))
+
+                self.trajectory_thetas_left.append(new_theta)
+                self.trajectory_thetas_right.append(self.angles_right)
+
+                self.end_effector_left.append(new_pos)
                 self.end_effector_right.append(self.end_effector_right[-1])
 
                 if break_at == j:
@@ -588,7 +673,10 @@ class PlanarArms:
 
         plt.show()
 
-    def plot_trajectory(self, fig_size=(12, 8), points: list | tuple = None):
+    def plot_trajectory(self, fig_size=(12, 8),
+                        points: list | tuple | None = None,
+                        save_name: str = None,
+                        frames_per_sec: int = None):
         """
         Visualizes the movements performed so far. Use the slider to set the time
 
@@ -596,6 +684,7 @@ class PlanarArms:
         :return: None
         """
         from matplotlib.widgets import Slider
+        import matplotlib.animation as animation
 
         init_t = 0
         num_t = len(self.trajectory_thetas_left)
@@ -627,24 +716,47 @@ class PlanarArms:
             for point in points:
                 ax.scatter(point[0], point[1], marker='+')
 
+        val_max = num_t - 1
+
         ax_slider = plt.axes((0.25, 0.05, 0.5, 0.03))
         time_slider = Slider(
             ax=ax_slider,
             label='n iteration',
             valmin=0,
-            valmax=num_t - 1,
+            valmax=val_max,
             valinit=0,
         )
 
-        def update(val):
-            t = int(time_slider.val)
-            l.set_data(coordinates_left[t][0, :], coordinates_left[t][1, :])
-            r.set_data(coordinates_right[t][0, :], coordinates_right[t][1, :])
-            time_slider.valtext.set_text(t)
+        if save_name is None:
+            def update(val):
+                t = int(time_slider.val)
+                l.set_data(coordinates_left[t][0, :], coordinates_left[t][1, :])
+                r.set_data(coordinates_right[t][0, :], coordinates_right[t][1, :])
+                time_slider.valtext.set_text(t)
 
-        time_slider.on_changed(update)
+            time_slider.on_changed(update)
 
-        plt.show()
+            plt.show()
+        else:
+            def animate(t):
+                l.set_data(coordinates_left[t][0, :], coordinates_left[t][1, :])
+                r.set_data(coordinates_right[t][0, :], coordinates_right[t][1, :])
+                time_slider.valtext.set_text(t)
+                return r, l
+
+            folder, _ = os.path.split(save_name)
+            if folder and not os.path.exists(folder):
+                os.makedirs(folder)
+
+            ani = animation.FuncAnimation(fig, animate, frames=np.arange(0, val_max))
+
+            if save_name[-3:] == 'mp4':
+                writer = animation.FFMpegWriter(fps=frames_per_sec)
+            else:
+                writer = animation.PillowWriter(fps=frames_per_sec)
+
+            ani.save(save_name, writer=writer)
+            plt.close(fig)
 
     @staticmethod
     def calc_motor_vector(init_pos: np.ndarray[float, float], end_pos: np.ndarray[float, float],

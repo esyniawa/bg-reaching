@@ -34,12 +34,12 @@ BaselineNeuron = ann.Neuron(
 LinearNeuron = ann.Neuron(
     parameters="""
         tau = 10.0 : population
-        baseline = 0.0 : population
+        baseline = 0.0
         noise = 0.0 : population
     """,
     equations="""
-        tau*dmp/dt + mp = sum(exc) - sum(inh) + noise*Uniform(-1.0,1.0)
-        r = mp + baseline : min=0.0 
+        tau*dmp/dt + mp = sum(exc) - sum(inh) + noise*Uniform(-1.0,1.0) + baseline
+        r = mp : min=0.0 
     """
 )
 
@@ -48,10 +48,13 @@ StriatumD1Neuron = ann.Neuron(
         tau = 10.0 : population
         baseline = 0.0 : population
         noise = 0.0 : population
+        alpha = 0.8 : population
     """,
     equations="""
-        tau*dmp/dt + mp = sum(mod) * (sum(exc) - sum(inh)) + noise*Uniform(-1.0,1.0)
-        r = mp + baseline: min = 0.0
+        tau*dmp/dt + mp = sum(mod) * (sum(exc) - sum(inh)) + noise*Uniform(-1.0,1.0) + baseline
+        r = tanh(mp): min = 0.0
+        
+        r_mean = alpha * r_mean + (1 - alpha) * r
     """
 )
 
@@ -84,34 +87,40 @@ ReversedSynapse = ann.Synapse(
 # DA_typ = 1  ==> D1 type  DA_typ = -1 ==> D2 type
 PostCovarianceNoThreshold = ann.Synapse(
     parameters="""
-        tau=50.0 : projection
+        tau=20.0 : projection
         tau_alpha=10.0 : projection
-        regularization_threshold=1.0 : projection
-        DA_type = 1 : projection
+        regularization_threshold=0.6 : projection
+        DA_type=1 : projection
         threshold_pre=0.05 : projection
         threshold_post=0.0 : projection
+        eta=1.0 : projection
     """,
     equations="""
-        tau_alpha*dalpha/dt  + alpha = pos(post.mp - regularization_threshold)
-        trace = pos(post.r -  mean(post.r) - threshold_post) * pos(pre.r - threshold_pre)
-        tau * dweight/dt = trace - alpha*pos(post.r - mean(post.r) - threshold_post)
-        w = weight : min=0.0
+        tau_alpha*dalpha/dt  + alpha = pos(post.r - regularization_threshold)
+        dopa_mod = post.sum(dopa)
+        trace = eta * pos(post.r - post.r_mean - threshold_post) * pos(pre.r - threshold_pre)
+        tau * dweight/dt = dopa_mod * trace 
+        w = dopa_mod * (weight - alpha) : min=0.0
     """
 )
 
 # Inhibitory synapses STRD1 -> SNr and STRD2 -> GPe
 PreCovariance_inhibitory = ann.Synapse(
     parameters="""
-    tau = 1000.0 : projection
+    tau = 50.0 : projection
+    tau_alpha=10.0 : projection
     DA_type = 1 : projection
-    threshold_pre = 0.05 : projection
+    threshold_pre = 0.01 : projection
     threshold_post = 0.0 : projection
+    regularization_threshold = 0.6 : projection
+    eta = 1.0 : projection
     """,
     equations="""
-        trace = pos(pre.r - threshold_pre) * (mean(post.r) - post.r - threshold_post)
+        tau_alpha * dalpha/dt + alpha = pos(-post.r + regularization_threshold)
+        trace = eta * pos(pre.r - threshold_pre) * (mean(post.r) - post.r - threshold_post)
         dopa_mod = post.sum(dopa)
         tau * dweight/dt = dopa_mod * trace
-        w = dopa_mod * weight: min=0
+        w = dopa_mod * (weight - alpha): min=0
     """
 )
 

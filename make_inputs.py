@@ -26,9 +26,10 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
                                                          end_pos=np.array(end_point),
                                                          arm=parameter_1D['moving_arm'])
 
-    input_stn = 1 - gauss(parameter_1D['motor_orientations'], mu=motor_angle, sigma=parameter_1D['sig_stn'])
+    input_m1 = 10 * gauss(parameter_1D['motor_orientations'], mu=motor_angle, sigma=parameter_1D['sig_stn'], norm=False)
+    input_stn = np.amax(input_m1) - input_m1
 
-    return input_pm, input_s1, input_stn, distance
+    return input_pm, input_s1, input_m1, input_stn, distance
 
 
 if __name__ == '__main__':

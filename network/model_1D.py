@@ -13,18 +13,19 @@ SNc = ann.Population(geometry=1, neuron=DopamineNeuron, name='SNc')
 
 # CBGT Loop
 StrD1 = ann.Population(geometry=parameter_1D['dim_str'], neuron=StriatumD1Neuron, name='StrD1')
-StrD1.noise = 0.05
+StrD1.noise = 0.0
 
 SNr = ann.Population(geometry=parameter_1D['dim_bg'], neuron=LinearNeuron, name='SNr')
 SNr.noise = 0.02
-SNr.baseline = 0.6
+SNr.baseline = 0.8
 
 VL = ann.Population(geometry=parameter_1D['dim_bg'], neuron=LinearNeuron, name='VL')
 VL.noise = 0.05
 VL.baseline = 0.6
 
 M1 = ann.Population(geometry=parameter_1D['dim_bg'], neuron=LinearNeuron, name='M1')
-M1.noise = 0.01
+M1.tau = 20.
+M1.noise = 0.02
 M1.baseline = 0.0
 
 # output population
@@ -40,7 +41,7 @@ PM_StrD1 = ann.Projection(pre=PM, post=StrD1, target='exc', synapse=PostCovarian
 PM_StrD1.connect_all_to_all(0.0)
 
 StrD1_StrD1 = ann.Projection(pre=StrD1, post=StrD1, target='inh')
-StrD1_StrD1.connect_all_to_all(0.1)
+StrD1_StrD1.connect_all_to_all(0.2)
 
 StrD1_SNr = ann.Projection(pre=StrD1, post=SNr, target='inh', synapse=PreCovariance_inhibitory, name='D1_SNr')
 w_StrD1_SNr = w_ones_to_all(preDim=StrD1.geometry, postDim=SNr.geometry, weight=0.0)
@@ -52,6 +53,9 @@ STN_SNr.connect_from_matrix(w_stn)
 
 SNc_SNr = ann.Projection(pre=SNc, post=SNr, target='dopa')
 SNc_SNr.connect_all_to_all(1.0)
+
+SNc_StrD1 = ann.Projection(pre=SNc, post=StrD1, target='dopa')
+SNc_StrD1.connect_all_to_all(1.0)
 
 # SNr_SNr = ann.Projection(pre=SNr, post=SNr, target='exc', synapse=ReversedSynapse)
 # SNr_SNr.connect_all_to_all(0.1)
@@ -75,4 +79,4 @@ PopCode_norm.connect_all_to_all(1.0)
 
 # Feedback connection
 M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc')
-M1_StrD1.connect_all_to_all(ann.Uniform(min=0.0, max=0.5))
+M1_StrD1.connect_all_to_all(ann.Uniform(min=0.0, max=1.0))
