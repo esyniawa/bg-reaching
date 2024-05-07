@@ -676,7 +676,8 @@ class PlanarArms:
     def plot_trajectory(self, fig_size=(12, 8),
                         points: list | tuple | None = None,
                         save_name: str = None,
-                        frames_per_sec: int = None):
+                        frames_per_sec: int = None,
+                        turn_off_axis: bool = False):
         """
         Visualizes the movements performed so far. Use the slider to set the time
 
@@ -703,8 +704,12 @@ class PlanarArms:
 
         fig, ax = plt.subplots(figsize=fig_size)
 
-        ax.set_xlabel('x in [mm]')
-        ax.set_ylabel('y in [mm]')
+        if turn_off_axis:
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+        else:
+            ax.set_xlabel('x in [mm]')
+            ax.set_ylabel('y in [mm]')
 
         ax.set_xlim(PlanarArms.x_limits)
         ax.set_ylim(PlanarArms.y_limits)
@@ -718,16 +723,17 @@ class PlanarArms:
 
         val_max = num_t - 1
 
-        ax_slider = plt.axes((0.25, 0.05, 0.5, 0.03))
-        time_slider = Slider(
-            ax=ax_slider,
-            label='n iteration',
-            valmin=0,
-            valmax=val_max,
-            valinit=0,
-        )
-
         if save_name is None:
+
+            ax_slider = plt.axes((0.25, 0.05, 0.5, 0.03))
+            time_slider = Slider(
+                ax=ax_slider,
+                label='n iteration',
+                valmin=0,
+                valmax=val_max,
+                valinit=0,
+            )
+
             def update(val):
                 t = int(time_slider.val)
                 l.set_data(coordinates_left[t][0, :], coordinates_left[t][1, :])
@@ -741,7 +747,6 @@ class PlanarArms:
             def animate(t):
                 l.set_data(coordinates_left[t][0, :], coordinates_left[t][1, :])
                 r.set_data(coordinates_right[t][0, :], coordinates_right[t][1, :])
-                time_slider.valtext.set_text(t)
                 return r, l
 
             folder, _ = os.path.split(save_name)

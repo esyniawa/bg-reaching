@@ -138,6 +138,7 @@ class PopMonitor(object):
                       fig_size: tuple[float, float] | list[float, float] = (5, 5),
                       t_init: int = 0,
                       save_name: str = None,
+                      label_ticks: bool = True,
                       frames_per_sec: int | None = 10):
 
         from matplotlib.widgets import Slider
@@ -242,21 +243,26 @@ class PopMonitor(object):
             else:
                 raise AssertionError('You must clarify which type of plot do you want!')
 
+            if not label_ticks:
+                plt.xticks([])
+                plt.yticks([])
+
             ls.append((key, l, plot_type))
 
         # time length
         val_max = results[key].shape[0] - 1
 
-        ax_slider = plt.axes((0.25, 0.05, 0.5, 0.03))
-        time_slider = Slider(
-            ax=ax_slider,
-            label='n iteration',
-            valmin=0,
-            valmax=val_max,
-            valinit=t_init
-        )
-
         if save_name is None:
+
+            ax_slider = plt.axes((0.25, 0.05, 0.5, 0.03))
+            time_slider = Slider(
+                ax=ax_slider,
+                label='n iteration',
+                valmin=0,
+                valmax=val_max,
+                valinit=t_init
+            )
+
             def update(val):
                 t = int(time_slider.val)
                 time_slider.valtext.set_text(t)
@@ -290,8 +296,6 @@ class PopMonitor(object):
             plt.show()
         else:
             def update_animate(t):
-                time_slider.valtext.set_text(t)
-                time_slider.val = t
                 subplots = []
                 for key, plot, plt_type in ls:
                     subplots.append(plot)

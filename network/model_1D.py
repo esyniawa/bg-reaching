@@ -8,16 +8,24 @@ from .definitions import *
 PM = ann.Population(geometry=state_space.shape[:2], neuron=BaselineNeuron, name='PM')
 S1 = ann.Population(geometry=parameter_1D['dim_s1'], neuron=BaselineNeuron, name='S1')
 
-STN = ann.Population(geometry=parameter_1D['dim_motor'], neuron=BaselineNeuron, name='STN')
+Cortex = ann.Population(geometry=parameter_1D['dim_motor'], neuron=BaselineNeuron, name='M1_ventral')
 SNc = ann.Population(geometry=1, neuron=DopamineNeuron, name='SNc')
+
+# transmission populations into putamen
+CM = ann.Population(geometry=parameter_1D['dim_motor'], neuron=LinearNeuron, name='CM')
+CM.noise = 0.0
 
 # CBGT Loop
 StrD1 = ann.Population(geometry=parameter_1D['dim_str'], neuron=StriatumD1Neuron, name='StrD1')
 StrD1.noise = 0.0
 
-SNr = ann.Population(geometry=parameter_1D['dim_bg'], neuron=LinearNeuron, name='SNr')
+GPe = ann.Population(geometry=parameter_1D['dim_motor'], neuron=LinearNeuron, name='GPe')
+GPe.noise = 0.01
+GPe.baseline = 0.2
+
+SNr = ann.Population(geometry=parameter_1D['dim_bg'], neuron=SNrNeuron, name='SNr')
 SNr.noise = 0.02
-SNr.baseline = 0.8
+SNr.baseline = 1.0
 
 VL = ann.Population(geometry=parameter_1D['dim_bg'], neuron=LinearNeuron, name='VL')
 VL.noise = 0.05
@@ -33,6 +41,16 @@ Out_PopCode_Pooling = ann.Population(geometry=parameter_1D['dim_motor'], neuron=
 Out = ann.Population(geometry=3, neuron=OutputNeuron, name='Output')
 
 # Projections
+Cortex_CM = ann.Projection(pre=Cortex, post=CM, target='exc')
+Cortex_CM.connect_one_to_one(weights=0.3)
+
+CM_GPe = ann.Projection(pre=CM, post=GPe, target='exc')
+CM_GPe.connect_one_to_one(weights=1.0)
+
+CM_M1 = ann.Projection(pre=CM, post=M1, target='exc')
+w_M1 = column_wise_connection(preDim=parameter_1D['dim_motor'], postDim=M1.geometry)
+CM_M1.connect_from_matrix(w_M1)
+
 S1_StrD1 = ann.Projection(pre=S1, post=StrD1, target='mod')
 w_s1 = row_wise_connection(preDim=parameter_1D['dim_s1'], postDim=StrD1.geometry)
 S1_StrD1.connect_from_matrix(w_s1)
@@ -47,9 +65,9 @@ StrD1_SNr = ann.Projection(pre=StrD1, post=SNr, target='inh', synapse=PreCovaria
 w_StrD1_SNr = w_ones_to_all(preDim=StrD1.geometry, postDim=SNr.geometry, weight=0.0)
 StrD1_SNr.connect_from_matrix(w_StrD1_SNr)
 
-STN_SNr = ann.Projection(pre=STN, post=SNr, target='exc', name='STN_SNr', synapse=STN_Synapse)
-w_stn = column_wise_connection(preDim=parameter_1D['dim_motor'], postDim=SNr.geometry)
-STN_SNr.connect_from_matrix(w_stn)
+GPe_SNr = ann.Projection(pre=GPe, post=SNr, target='inh', name='GPe_SNr', synapse=GPe_Synapse)
+w_gpe = column_wise_connection(preDim=parameter_1D['dim_motor'], postDim=SNr.geometry)
+GPe_SNr.connect_from_matrix(w_gpe)
 
 SNc_SNr = ann.Projection(pre=SNc, post=SNr, target='dopa')
 SNc_SNr.connect_all_to_all(1.0)
