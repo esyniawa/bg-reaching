@@ -1,7 +1,8 @@
 import numpy as np
 
-from network.params import parameter_1D, state_space
+from network.params import parameters, state_space
 from network.utils import bivariate_gauss, gauss
+from network.model import *
 
 from kinematics.planar_arms import PlanarArms
 
@@ -12,25 +13,52 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 
     input_pm = bivariate_gauss(xy=state_space,
                                mu=end_point,
-                               sigma=parameter_1D['sig_pm'],
+                               sigma=parameters['sig_pm'],
                                norm=True,
                                plot=show_input)
 
     input_s1 = bivariate_gauss(xy=state_space,
                                mu=start_point,
-                               sigma=parameter_1D['sig_s1'],
+                               sigma=parameters['sig_s1'],
                                norm=True,
                                plot=show_input)
 
     motor_angle, distance = PlanarArms.calc_motor_vector(init_pos=np.array(start_point),
                                                          end_pos=np.array(end_point),
-                                                         arm=parameter_1D['moving_arm'])
+                                                         arm=parameters['moving_arm'])
 
-    input_m1 = gauss(parameter_1D['motor_orientations'], mu=motor_angle, sigma=parameter_1D['sig_stn'], norm=True)
+    input_m1 = gauss(parameters['motor_orientations'], mu=motor_angle, sigma=parameters['sig_m1'], norm=False)
 
     return input_pm, input_s1, input_m1, distance
 
 
+def train_position(init_postion: np.ndarray,
+                   scale_movement: float = 2.0,
+                   t_wait: float = 20.) -> None:
+
+    random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
+                                 high=parameters['x_reaching_space_limits'][1])
+    random_y = np.random.uniform(low=parameters['y_reaching_space_limits'][0],
+                                 high=parameters['y_reaching_space_limits'][1])
+
+    base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_postion,
+                                                      end_point=[random_x, random_y])
+
+    # simulation state
+    SNc.firing = 0
+    PM.baseline = 0
+    S1.baseline = 0
+    Cortex.baseline = 0
+    ann.simulate(t_wait)
+
+    # set inputs
+    SNc.firing = 1
+    PM.baseline = base_pm
+    S1.baseline = base_s1
+    Cortex.baseline = base_m1
+    ann.simulate(distance * scale_movement)
+
+
 if __name__ == '__main__':
-    make_inputs(start_point=parameter_1D['starting_points'][1], end_point=parameter_1D['reaching_points'][1],
+    make_inputs(start_point=parameters['starting_points'][1], end_point=parameters['reaching_points'][1],
                 show_input=True)

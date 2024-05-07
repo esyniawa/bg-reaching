@@ -2,10 +2,21 @@ import numpy as np
 
 
 def gauss(x: np.ndarray, mu: float, sigma: float, norm: bool = True, limit: float | None = None, plot: bool = False):
-    res = 1.0 / (np.sqrt(2.0 * np.pi) * sigma) * np.exp(-np.power((x - mu) / sigma, 2) / 2)
+    """
+
+    :param x:
+    :param mu: Mean
+    :param sigma: Standard deviation
+    :param norm: Should the function be normalized to 1.0?
+    :param limit: Clipping function: If a value undercuts the "limit", it is set to 0.0
+    :param plot: Should the function be plotted?
+    :return: Normal(x)
+    """
+
+    res = np.exp(-np.power((x - mu) / sigma, 2) / 2)
 
     if norm:
-        res /= np.max(res)
+        res *= 1.0 / (np.sqrt(2.0 * np.pi) * sigma)
 
     if limit is not None:
         res[res < limit] = 0.0

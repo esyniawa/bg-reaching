@@ -27,6 +27,25 @@ def row_wise_connection(preDim: int,
     return w.reshape(i*j, preDim)
 
 
+def w_2D_to_3D_S1(preDim: list | tuple, postDim: list | tuple, weight: float = 1.0):
+
+    if isinstance(preDim, tuple):
+        preDim = list(preDim)
+    if isinstance(postDim, tuple):
+        postDim = list(postDim)
+
+    post_k = postDim.pop(-1)
+    assert np.array(preDim).shape == np.array(postDim).shape, "Remaining Dimensions should align!"
+
+    n = np.prod(preDim)
+    w = np.array([[[None]*n]*post_k]*n)
+
+    for i in range(n):
+        w[i, :, i] = weight
+
+    return w.reshape((n*post_k, n))
+
+
 def w_ones_to_all(preDim: list | tuple, postDim: list | tuple, allDim: int = -1, weight: float = 1.0):
     """
     Returns connection matrix, where all layers are connected one-to-one, except one layer (allDim), which is connected

@@ -18,7 +18,7 @@ OutputNeuron = ann.Neuron(
 
 BaselineNeuron = ann.Neuron(
     parameters="""
-        tau_up = 5.0 : population
+        tau_up = 10.0 : population
         tau_down = 20.0 : population
         baseline = 0.0
         noise = 0.0 : population
@@ -104,10 +104,10 @@ PostCovarianceNoThreshold = ann.Synapse(
     parameters="""
         tau=20.0 : projection
         tau_alpha=10.0 : projection
-        regularization_threshold=0.6 : projection
+        regularization_threshold=0.5 : projection
         DA_type=1 : projection
         threshold_pre=0.05 : projection
-        threshold_post=0.0 : projection
+        threshold_post=0.05 : projection
         eta=1.0 : projection
     """,
     equations="""
@@ -125,8 +125,8 @@ PreCovariance_inhibitory = ann.Synapse(
         tau = 20.0 : projection
         tau_alpha=10.0 : projection
         DA_type = 1 : projection
-        threshold_pre = 0.0 : projection
-        threshold_post = 0.0 : projection
+        threshold_pre = 0.01 : projection
+        threshold_post = 0.01 : projection
         regularization_threshold = 0.6 : projection
         eta = 1.0 : projection
     """,
@@ -135,19 +135,19 @@ PreCovariance_inhibitory = ann.Synapse(
         trace = eta * pos(pre.r - post.r_mean - threshold_pre) * (post.r_mean - post.r - threshold_post)
         dopa_mod = post.sum(dopa)
         tau * dweight/dt = dopa_mod * trace
-        w = dopa_mod * (weight - alpha) : min = 0.0
+        w = dopa_mod * (weight) : min = 0.0
     """
 )
 
-GPe_Synapse = ann.Synapse(
-    parameters="""
-        weight = 1.0 : projection
-    """,
-    equations="""
-        dopa_mod = post.sum(dopa)
-        w = dopa_mod * weight: min = 0.0
-    """
-)
+# GPe_Synapse = ann.Synapse(
+#     parameters="""
+#         weight = 1.0 : projection
+#     """,
+#     equations="""
+#         dopa_mod = post.sum(dopa)
+#         w = dopa_mod * weight: min = 0.0
+#     """
+# )
 
 DAPrediction = ann.Synapse(
     parameters="""
