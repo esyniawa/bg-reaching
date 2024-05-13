@@ -50,7 +50,7 @@ CM_M1 = ann.Projection(pre=CM, post=M1, target='exc')
 CM_M1.connect_one_to_one(weights=1.0)
 
 S1_StrD1 = ann.Projection(pre=S1, post=StrD1, target='mod')
-w_s1 = row_wise_connection(preDim=parameters['dim_s1'], postDim=StrD1.geometry)
+w_s1 = w_2D_to_3D_S1(preDim=parameters['dim_s1'], postDim=StrD1.geometry)
 S1_StrD1.connect_from_matrix(w_s1)
 
 PM_StrD1 = ann.Projection(pre=PM, post=StrD1, target='exc', synapse=PostCovarianceNoThreshold, name='PM_D1')

@@ -20,11 +20,9 @@ parameters = {
 
 parameters['motor_orientations'] = np.linspace(0, 360, parameters['dim_motor'])
 
-parameters['dim_s1'] = len(parameters['starting_points'])
 parameters['sig_s1'] = 50.  # in [mm]
 parameters['sig_pm'] = 200.  # in [mm]
 
-parameters['dim_str'] = (parameters['dim_s1'], 25)
 parameters['dim_bg'] = parameters['dim_motor']
 
 parameters['strength_efference_copy'] = 0.75
@@ -37,5 +35,6 @@ state_space = create_state_space(
     step_size_y=parameters['y_step_size'],
 )
 
-parameters['dim_s1_new'] = state_space.shape[:-1]
+parameters['dim_s1'] = state_space.shape[:-1]
+parameters['dim_str'] = tuple(list(parameters['dim_s1']) + [25])
 

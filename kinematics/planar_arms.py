@@ -679,10 +679,14 @@ class PlanarArms:
                         frames_per_sec: int = None,
                         turn_off_axis: bool = False):
         """
-        Visualizes the movements performed so far. Use the slider to set the time
+        Visualizes the movements performed so far. Use the slider to set the time.
 
         :param fig_size:
-        :return: None
+        :param points:
+        :param save_name: If not None, the trajectory is saved in a .gif or .mp4
+        :param frames_per_sec:
+        :param turn_off_axis:
+        :return:
         """
         from matplotlib.widgets import Slider
         import matplotlib.animation as animation
