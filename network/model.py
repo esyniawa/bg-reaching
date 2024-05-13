@@ -3,6 +3,7 @@ from .params import parameters, state_space
 from .connections import *
 from .definitions import *
 
+ann.setup(num_threads=4)
 
 # input populations
 PM = ann.Population(geometry=state_space.shape[:2], neuron=BaselineNeuron, name='PM')

@@ -13,7 +13,7 @@ from monitoring import PopMonitor
 
 from make_inputs import train_position, test_movement
 
-N_training_trials = 2_000
+N_training_trials = 200
 arms = PlanarArms(init_angles_right=np.array((20, 20)),
                   init_angles_left=np.array((20, 20)),
                   radians=False)
