@@ -33,7 +33,7 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 
 
 def train_position(init_position: np.ndarray,
-                   scale_movement: float = 2.0,
+                   scale_movement: float = 1.0,
                    t_wait: float = 20.) -> np.ndarray:
 
     random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
@@ -56,7 +56,7 @@ def train_position(init_position: np.ndarray,
     PM.baseline = base_pm
     S1.baseline = base_s1
     Cortex.baseline = base_m1
-    ann.simulate(distance * scale_movement)
+    ann.simulate(1000.)
 
     return np.array([random_x, random_y])
 
