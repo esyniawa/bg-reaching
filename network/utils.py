@@ -16,7 +16,7 @@ def gauss(x: np.ndarray, mu: float, sigma: float, norm: bool = True, limit: floa
     res = np.exp(-np.power((x - mu) / sigma, 2) / 2)
 
     if norm:
-        res *= 1.0 / (np.sqrt(2.0 * np.pi) * sigma)
+        res /= (np.sqrt(2.0 * np.pi) * sigma)
 
     if limit is not None:
         res[res < limit] = 0.0
@@ -26,6 +26,8 @@ def gauss(x: np.ndarray, mu: float, sigma: float, norm: bool = True, limit: floa
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.plot(res)
+        plt.xticks([])
+        plt.yticks([])
         plt.show()
 
     return res
@@ -81,6 +83,8 @@ def bivariate_gauss(mu: tuple[float, float],
         fig = plt.figure()
         ax = fig.add_subplot(111)
         img = ax.contourf(a, cmap='Purples')
+        plt.xticks([])
+        plt.yticks([])
         plt.colorbar(img)
         plt.show()
 

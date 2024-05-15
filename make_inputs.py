@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 from network.params import parameters, state_space
@@ -33,8 +34,7 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 
 
 def train_position(init_position: np.ndarray,
-                   scale_movement: float = 1.0,
-                   t_wait: float = 20.) -> np.ndarray:
+                   t_wait: float = 100.) -> np.ndarray:
 
     random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
                                  high=parameters['x_reaching_space_limits'][1])
@@ -56,12 +56,12 @@ def train_position(init_position: np.ndarray,
     PM.baseline = base_pm
     S1.baseline = base_s1
     Cortex.baseline = base_m1
-    ann.simulate(1000.)
+    ann.simulate(2000.)
 
     return np.array([random_x, random_y])
 
 
-def test_movement(scale_movement: float = 2.0, t_wait: float = 20.) -> None:
+def test_movement(scale_movement: float = 2.0, t_wait: float = 100.) -> None:
 
     points_to_follow = [
         np.array((-100, 200)),
@@ -96,5 +96,29 @@ def test_movement(scale_movement: float = 2.0, t_wait: float = 20.) -> None:
 
 
 if __name__ == '__main__':
-    make_inputs(start_point=parameters['starting_points'][1], end_point=parameters['reaching_points'][1],
+    start = np.array((150, 100))
+    end = np.array((-190, 205))
+
+    make_inputs(start_point=start, end_point=end,
                 show_input=True)
+
+    angle, norm = PlanarArms.calc_motor_vector(init_pos=start, end_pos=end, input_theta=False, arm='right')
+
+    my_gauss = gauss(parameters['motor_orientations'], mu=angle, sigma=parameters['sig_m1'], norm=False)
+
+
+    thal = 0.8 * my_gauss
+    gpe = 0.2 + thal
+    gpi = 1. - thal
+
+    plotting = [my_gauss, thal, gpi, gpe]
+
+    for i, plot in enumerate(plotting):
+        fig, ax = plt.subplots()
+        ax.plot(plot)
+        ax.set_ylim([0, np.amax(plot) + 0.1])
+
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.savefig(f'plot_{i}.png')
