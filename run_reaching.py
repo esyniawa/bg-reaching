@@ -30,8 +30,6 @@ if __name__ == '__main__':
     folder = f'run_model_{sim_id}/'
     training_monitors = PopMonitor(pops_monitor, auto_start=False, sampling_rate=200.)
     training_cons = ConMonitor([PM_StrD1])
-    training_cons.extract_weights()
-
     test_monitors = PopMonitor(pops_monitor, auto_start=False, sampling_rate=1.0)
 
     # compile model
@@ -39,6 +37,8 @@ if __name__ == '__main__':
 
     # training
     training_monitors.start()
+    training_cons.extract_weights()
+
     positions = []
     for trial in range(N_training_trials):
         positions.append(init_position)
