@@ -20,12 +20,12 @@ parameters = {
 
 parameters['motor_orientations'] = np.linspace(0, 360, parameters['dim_motor'])
 
-parameters['sig_s1'] = 60.  # in [mm]
-parameters['sig_pm'] = 60.  # in [mm]
+parameters['sig_s1'] = 80.  # in [mm]
+parameters['sig_pm'] = 80.  # in [mm]
 
 parameters['dim_bg'] = parameters['dim_motor']
 
-parameters['strength_efference_copy'] = 0.75
+parameters['strength_efference_copy'] = 0.5
 parameters['sig_m1'] = 25.  # in [°]
 
 state_space = create_state_space(

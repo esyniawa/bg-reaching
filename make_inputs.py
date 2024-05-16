@@ -44,19 +44,23 @@ def train_position(init_position: np.ndarray,
     base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
                                                       end_point=[random_x, random_y])
 
+    ann.enable_learning()
+
     # simulation state
     SNc.firing = 0
     PM.baseline = 0
     S1.baseline = 0
-    Cortex.baseline = 0
+    CM.baseline = 0
     ann.simulate(t_wait)
 
     # set inputs
     SNc.firing = 1
     PM.baseline = base_pm
     S1.baseline = base_s1
-    Cortex.baseline = base_m1
-    ann.simulate(2000.)
+    CM.baseline = base_m1
+    ann.simulate(500.)
+
+    ann.reset(populations=True, monitors=False)
 
     return np.array([random_x, random_y])
 

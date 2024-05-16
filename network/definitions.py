@@ -107,8 +107,8 @@ PostCovarianceNoThreshold = ann.Synapse(
         regularization_threshold=0.5 : projection
         DA_type=1 : projection
         threshold_pre=0.05 : projection
-        threshold_post=0.05 : projection
-        eta=1.0 : projection
+        threshold_post=0.01 : projection
+        eta=10.0 : projection
     """,
     equations="""
         tau_alpha*dalpha/dt  + alpha = pos(post.r - regularization_threshold)
@@ -126,9 +126,9 @@ PreCovariance_inhibitory = ann.Synapse(
         tau_alpha=10.0 : projection
         DA_type = 1 : projection
         threshold_pre = 0.01 : projection
-        threshold_post = 0.01 : projection
+        threshold_post = 0.0 : projection
         regularization_threshold = 0.6 : projection
-        eta = 1.0 : projection
+        eta = 10.0 : projection
     """,
     equations="""
         tau_alpha * dalpha/dt + alpha = pos(-post.r + regularization_threshold)

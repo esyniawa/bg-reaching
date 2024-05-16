@@ -9,12 +9,12 @@ ann.setup(num_threads=4)
 PM = ann.Population(geometry=state_space.shape[:2], neuron=BaselineNeuron, name='PM')
 S1 = ann.Population(geometry=parameters['dim_s1'], neuron=BaselineNeuron, name='S1')
 
-Cortex = ann.Population(geometry=parameters['dim_motor'], neuron=BaselineNeuron, name='M1_ventral')
 SNc = ann.Population(geometry=1, neuron=DopamineNeuron, name='SNc')
 
 # transmission populations into putamen
 CM = ann.Population(geometry=parameters['dim_motor'], neuron=LinearNeuron, name='CM')
-CM.noise = 0.0
+CM.tau = 30.
+CM.noise = 0.01
 
 # CBGT Loop (putamen)
 StrD1 = ann.Population(geometry=parameters['dim_str'], neuron=StriatumD1Neuron, name='StrD1')
@@ -25,27 +25,24 @@ GPe.noise = 0.01
 GPe.baseline = 0.2
 
 SNr = ann.Population(geometry=parameters['dim_bg'], neuron=SNrNeuron, name='SNr')
-SNr.noise = 0.02
+SNr.noise = 0.0
 SNr.baseline = 1.0
 
 VL = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='VL')
-VL.noise = 0.05
+VL.noise = 0.0
 VL.baseline = 0.6
 
 M1 = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='M1')
 M1.tau = 20.
-M1.noise = 0.02
+M1.noise = 0.0
 M1.baseline = 0.0
 
 # output population
 Output_Pop = ann.Population(geometry=3, neuron=OutputNeuron, name='Output')
 
 # Projections
-Cortex_CM = ann.Projection(pre=Cortex, post=CM, target='exc')
-Cortex_CM.connect_one_to_one(weights=parameters['strength_efference_copy'])
-
 CM_GPe = ann.Projection(pre=CM, post=GPe, target='exc')
-CM_GPe.connect_one_to_one(weights=1.0)
+CM_GPe.connect_one_to_one(weights=parameters['strength_efference_copy'])
 
 CM_M1 = ann.Projection(pre=CM, post=M1, target='exc')
 CM_M1.connect_one_to_one(weights=1.0)
@@ -66,6 +63,7 @@ StrD1_SNr.connect_all_to_all(0.0)
 GPe_SNr = ann.Projection(pre=GPe, post=SNr, target='inh', name='GPe_SNr')
 GPe_SNr.connect_one_to_one(weights=1.0)
 
+# dopa connections
 SNc_SNr = ann.Projection(pre=SNc, post=SNr, target='dopa')
 SNc_SNr.connect_all_to_all(1.0)
 
