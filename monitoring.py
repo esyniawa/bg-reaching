@@ -46,8 +46,16 @@ class PopMonitor(object):
         for i, monitor in enumerate(self.monitors):
             res[self.variables[i] + '_' + monitor.object.name] = monitor.get(self.variables[i],
                                                                              keep=not delete, reshape=reshape)
-
         return res
+
+    def get_specific_monitor(self, pop_name: str, delete: bool = True, reshape: bool = True):
+        index = [i for i, monitor in enumerate(self.monitors) if pop_name in monitor.object.name][0]
+
+        ret = self.monitors[index].get(self.variables[index],
+                                       keep=not delete,
+                                       reshape=reshape)
+
+        return ret
 
     def save(self, folder, delete: bool = True):
         if not os.path.exists(folder):
@@ -324,6 +332,88 @@ class PopMonitor(object):
                         plot[0].set_xdata(t)
 
                 return subplots
+
+            folder, _ = os.path.split(save_name)
+            if folder and not os.path.exists(folder):
+                os.makedirs(folder)
+
+            ani = animation.FuncAnimation(fig, update_animate, frames=np.arange(0, val_max))
+
+            if save_name[-3:] == 'mp4':
+                writer = animation.FFMpegWriter(fps=frames_per_sec)
+            else:
+                writer = animation.PillowWriter(fps=frames_per_sec)
+
+            ani.save(save_name, writer=writer)
+            plt.close(fig)
+
+    def animate_population_3D(self,
+                              pop_name: str,
+                              iter_dim: int,
+                              plot_order: tuple,
+                              t_init: int = 0,
+                              fig_size: tuple[float, float] = (12, 8),
+                              save_name: str = None,
+                              label_ticks: bool = True,
+                              frames_per_sec: int | None = 10):
+
+        from matplotlib.widgets import Slider
+        import matplotlib.animation as animation
+
+        try:
+            monitor = self.get_specific_monitor(pop_name=pop_name, delete=False)
+        except:
+            raise AssertionError(f'Population {pop_name} is not in the monitor list!')
+
+        # time length
+        t_max = monitor.shape[0] - 1
+        results = monitor[0]
+        val_max = np.amax(results)
+
+        assert results.shape[iter_dim] <= np.prod(plot_order), ('There are not enough subplots to plot all dimensions '
+                                                                'of the population!!!')
+
+        ncols, nrows = plot_order
+        fig = plt.figure(figsize=fig_size)
+        ls = []
+
+        for i, result in enumerate(np.rollaxis(results, iter_dim)):
+            ax = fig.add_subplot(nrows, ncols, i + 1)
+            l = ax.imshow(result, vmin=0, vmax=val_max, cmap='Blues')
+            ls.append(l)
+
+        if not label_ticks:
+            plt.xticks([])
+            plt.yticks([])
+
+        if save_name is None:
+
+            ax_slider = plt.axes((0.25, 0.05, 0.5, 0.03))
+            time_slider = Slider(
+                ax=ax_slider,
+                label='n iteration',
+                valmin=0,
+                valmax=t_max,
+                valinit=t_init
+            )
+
+            def update(val):
+                t = int(time_slider.val)
+                time_slider.valtext.set_text(t)
+                results = monitor[t]
+
+                for result, plot in zip(np.rollaxis(results, iter_dim), ls):
+                    plot.set_data(result)
+
+            time_slider.on_changed(update)
+
+            plt.show()
+        else:
+            def update_animate(t):
+                results = monitor[t]
+
+                for result, plot in zip(np.rollaxis(results, iter_dim), ls):
+                    plot.set_data(result)
 
             folder, _ = os.path.split(save_name)
             if folder and not os.path.exists(folder):
