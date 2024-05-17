@@ -13,7 +13,7 @@ SNc = ann.Population(geometry=1, neuron=DopamineNeuron, name='SNc')
 
 # transmission populations into putamen
 CM = ann.Population(geometry=parameters['dim_motor'], neuron=LinearNeuron, name='CM')
-CM.tau = 30.
+CM.tau = 20.
 CM.noise = 0.01
 
 # CBGT Loop (putamen)
@@ -24,12 +24,12 @@ GPe = ann.Population(geometry=parameters['dim_motor'], neuron=LinearNeuron, name
 GPe.noise = 0.01
 GPe.baseline = 0.2
 
-SNr = ann.Population(geometry=parameters['dim_bg'], neuron=SNrNeuron, name='SNr')
-SNr.noise = 0.0
+SNr = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='SNr')
+SNr.noise = 0.05
 SNr.baseline = 1.0
 
 VL = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='VL')
-VL.noise = 0.0
+VL.noise = 0.01
 VL.baseline = 0.6
 
 M1 = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='M1')
@@ -77,7 +77,7 @@ SNr_VL = ann.Projection(pre=SNr, post=VL, target='inh')
 SNr_VL.connect_one_to_one(1.0)
 
 VL_M1 = ann.Projection(pre=VL, post=M1, target='exc')
-VL_M1.connect_one_to_one(1.0)
+VL_M1.connect_one_to_one(0.75)
 
 # Output projection
 PopCode_out = ann.Projection(pre=M1, post=Output_Pop, target='exc')
@@ -91,3 +91,7 @@ PopCode_norm.connect_all_to_all(1.0)
 # Feedback connection
 M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc')
 M1_StrD1.connect_all_to_all(ann.Uniform(min=0.0, max=0.5))
+
+# Reward prediction
+StrD1_SNc = ann.Projection(pre=StrD1, post=SNc, target='inh', synapse=DAPrediction)
+StrD1_SNc.connect_all_to_all(weights=0.0)

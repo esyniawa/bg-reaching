@@ -1,17 +1,8 @@
-import os.path
 import sys
 
-import ANNarchy
-import numpy as np
-
 from kinematics.planar_arms import PlanarArms
-
-from network.params import parameters
 from network.model import *
-from network.utils import bivariate_gauss, gauss
-
 from monitoring import PopMonitor
-
 from make_inputs import train_position, test_movement
 
 N_training_trials = 1_000

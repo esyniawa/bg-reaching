@@ -1,47 +1,41 @@
 import numpy as np
 
 
-def gauss(x: np.ndarray, mu: float, sigma: float, norm: bool = True, limit: float | None = None, plot: bool = False):
-    """
+def circ_gauss(mu: float,
+               sigma: float,
+               n: int,
+               scal: float = 1.0,
+               norm: bool = False,
+               limit: float | None = None,
+               plot: bool = False):
 
-    :param x:
-    :param mu: Mean
-    :param sigma: Standard deviation
-    :param norm: Should the function be normalized to 1.0?
-    :param limit: Clipping function: If a value undercuts the "limit", it is set to 0.0
-    :param plot: Should the function be plotted?
-    :return: Normal(x)
-    """
+    mu /= scal
+    ret = np.zeros(n)
+    for i in range(n):
+        res = abs(i-mu)
+        if res > n/2:
+            ret[i] = n - res
+        else:
+            ret[i] = res
 
-    res = np.exp(-np.power((x - mu) / sigma, 2) / 2)
+    ret = np.exp(-np.power(scal * ret / sigma, 2) / 2)
 
     if norm:
-        res /= (np.sqrt(2.0 * np.pi) * sigma)
+        ret /= (np.sqrt(2.0 * np.pi) * sigma)
 
     if limit is not None:
-        res[res < limit] = 0.0
+        ret[ret < limit] = 0.0
 
     if plot:
         import matplotlib.pyplot as plt
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.plot(res)
+        ax.plot(ret)
         plt.xticks([])
         plt.yticks([])
         plt.show()
 
-    return res
-
-
-def distance(n: int, index: int, scal: float = 1.0):
-    ret = np.zeros(n)
-    for i in range(n):
-        res = abs(i-index)
-        if res > n/2:
-            ret[i] = n - res
-        else:
-            ret[i] = res
-    return scal * ret
+    return ret
 
 
 def create_state_space(x_bound: tuple[int, int],
@@ -89,3 +83,7 @@ def bivariate_gauss(mu: tuple[float, float],
         plt.show()
 
     return a
+
+
+if __name__ == '__main__':
+    circ_gauss(0, 25, 22, scal=15, plot=True)
