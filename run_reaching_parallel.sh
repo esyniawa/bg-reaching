@@ -1,14 +1,15 @@
 startTime=$(date +%s)
 
-let parallel=$1
-let durchgaenge=$2
+let trials=$1
+let parallel=$2
+let durchgaenge=$3
 
 # start paradigma
 for durchgang in $(seq $durchgaenge); do
 	startdurchgangTime=$(date +%s)
         for i in $(seq $parallel); do
                 let y=$i+$parallel*$((durchgang - 1))
-                python run_reaching.py $y &
+                python run_reaching.py $y $trials &
         done
         wait
         sleep 5
