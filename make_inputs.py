@@ -35,7 +35,7 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 
 
 def train_position(init_position: np.ndarray,
-                   t_wait: float = 100.) -> np.ndarray:
+                   t_wait: float = 50.) -> np.ndarray:
 
     random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
                                  high=parameters['x_reaching_space_limits'][1])
@@ -57,11 +57,11 @@ def train_position(init_position: np.ndarray,
     PM.baseline = base_pm
     S1.baseline = base_s1
     CM.baseline = base_m1
-    ann.simulate(200.)
+    ann.simulate(100.)
 
     # send reward
     SNc.firing = 1
-    ann.simulate(100)
+    ann.simulate_until(200, population=SNr)
     SNc.firing = 0
 
     ann.reset(populations=True, monitors=False)

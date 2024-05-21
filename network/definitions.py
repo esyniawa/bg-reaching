@@ -54,9 +54,7 @@ StriatumD1Neuron = ann.Neuron(
     """,
     equations="""
         tau*dmp/dt + mp = sum(mod) * (sum(exc) - sum(inh)) + noise*Uniform(-1.0,1.0) + baseline
-        r = tanh(mp): min = 0.0
-        
-        r_mean = alpha * r_mean + (1 - alpha) * r
+        r = mp : min = 0.0
     """
 )
 
@@ -113,7 +111,7 @@ PostCovarianceNoThreshold = ann.Synapse(
         K_dip = 0.4 : projection
         DA_type = 1 : projection
         threshold_pre = 0.0 : projection
-        threshold_post = 0.0 : projection
+        threshold_post = 0.05 : projection
     """,
     equations="""
         tau_alpha*dalpha/dt  + alpha = pos(post.mp - regularization_threshold)
@@ -137,7 +135,7 @@ PreCovariance_inhibitory = ann.Synapse(
         K_burst = 1.0 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection
-        threshold_pre = 0.0
+        threshold_pre = 0.05 : projection
         threshold_post = 0.0 : projection
         negterm = 1 : projection
     """,

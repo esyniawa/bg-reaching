@@ -4,7 +4,7 @@ from network.model import *
 from monitoring import PopMonitor, ConMonitor
 from make_inputs import train_position, test_movement
 
-N_training_trials = 1_000
+N_training_trials = 2_500
 
 init_position = np.array((0, 150))
 pops_monitor = [PM, S1, StrD1, GPe, SNr, CM, VL, M1, SNc, Output_Pop]

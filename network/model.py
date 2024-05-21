@@ -3,7 +3,7 @@ from .params import parameters, state_space
 from .connections import *
 from .definitions import *
 
-ann.setup(num_threads=4)
+ann.setup(num_threads=6)
 
 # input populations
 PM = ann.Population(geometry=state_space.shape[:2], neuron=BaselineNeuron, name='PM')
@@ -24,9 +24,9 @@ GPe = ann.Population(geometry=parameters['dim_motor'], neuron=LinearNeuron, name
 GPe.noise = 0.01
 GPe.baseline = 0.2
 
-SNr = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='SNr')
+SNr = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='SNr', stop_condition='r<0.01')
 SNr.noise = 0.05
-SNr.baseline = 1.0
+SNr.baseline = 1.1
 
 VL = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='VL')
 VL.noise = 0.01
