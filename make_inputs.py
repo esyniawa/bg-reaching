@@ -71,6 +71,36 @@ def train_position(init_position: np.ndarray,
     return np.array([random_x, random_y])
 
 
+def train_fixed_position(init_position: np.ndarray,
+                         goal: np.ndarray,
+                         t_wait: float = 50.) -> np.ndarray:
+
+    base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
+                                                      end_point=goal)
+
+    ann.enable_learning()
+
+    # simulation state
+    PM.baseline = 0
+    S1.baseline = 0
+    CM.baseline = 0
+    ann.simulate(t_wait)
+
+    # set inputs
+    S1.baseline = base_s1
+    CM.baseline = base_m1
+    ann.simulate(100.)
+
+    # send reward
+    SNc.firing = 1
+    PM.baseline = base_pm
+    ann.simulate_until(200., population=SNr)
+    SNc.firing = 0
+    PM.baseline = 0
+
+    ann.reset(populations=True, monitors=False)
+
+
 def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
 
     points_to_follow = [
