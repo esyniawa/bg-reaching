@@ -10,24 +10,35 @@ from kinematics.planar_arms import PlanarArms
 
 def make_inputs(start_point: list[float, float] | tuple[float, float],
                 end_point: list[float, float] | tuple[float, float],
+                distance_rate: float = 50.,
+                trace_factor: float = .8,
                 show_input: bool = False):
 
+    motor_angle, distance = PlanarArms.calc_motor_vector(init_pos=np.array(start_point),
+                                                         end_pos=np.array(end_point),
+                                                         arm=parameters['moving_arm'])
+
+    # calculate pm input
     input_pm = bivariate_gauss(xy=state_space,
                                mu=end_point,
                                sigma=parameters['sig_pm'],
                                norm=True,
                                plot=show_input)
 
+    n_trace = int(np.floor(distance/distance_rate))
+    if n_trace > 0:
+        trace = np.linspace(start=start_point, stop=end_point, endpoint=False, num=n_trace)
+        for point in trace:
+            input_pm += trace_factor * bivariate_gauss(xy=state_space, mu=point, sigma=parameters['sig_pm'], norm=True)
+
+    # calculate s1 input
     input_s1 = bivariate_gauss(xy=state_space,
                                mu=start_point,
                                sigma=parameters['sig_s1'],
                                norm=True,
                                plot=show_input)
 
-    motor_angle, distance = PlanarArms.calc_motor_vector(init_pos=np.array(start_point),
-                                                         end_pos=np.array(end_point),
-                                                         arm=parameters['moving_arm'])
-
+    # calculate motor input
     input_m1 = circ_gauss(mu=motor_angle, sigma=parameters['sig_m1'],
                           n=parameters['dim_motor'], scal=parameters['motor_step_size'], norm=False)
 
@@ -104,3 +115,11 @@ def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
         ann.simulate(distance * scale_movement)
 
         ann.reset(monitors=False)
+
+
+input_pm, input_s1, _, distance = make_inputs(start_point=np.array((-100, 200)),
+                                              end_point=np.array((100, 50)))
+
+fig = plt.figure()
+plt.imshow(input_pm)
+plt.show()
