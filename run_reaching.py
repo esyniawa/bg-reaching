@@ -4,8 +4,6 @@ from network.model import *
 from monitoring import PopMonitor, ConMonitor
 from make_inputs import train_position, test_movement
 
-N_training_trials = 2_500
-
 init_position = np.array((0, 150))
 pops_monitor = [PM, S1, StrD1, GPe, SNr, CM, VL, M1, SNc, Output_Pop]
 
@@ -33,10 +31,14 @@ if __name__ == '__main__':
         init_position = train_position(init_position=init_position)
 
     # save
+    # rates
     training_monitors.save(folder='results/' + 'training_' + folder, delete=True)
+    # weights
     training_cons.extract_weights()
     training_cons.save_cons(folder='results/' + 'training_' + folder)
     training_cons.reset()
+    # positions
+    np.save('results/' + 'training_' + folder + 'learned_positions.npy', np.array(positions))
 
     # testing condition
     test_monitors.start()
@@ -44,4 +46,4 @@ if __name__ == '__main__':
 
     # save data
     test_monitors.save(folder='results/' + 'test_' + folder, delete=True)
-    np.save('results/' + 'test_' + folder + 'learned_positions.npy', np.array(positions))
+

@@ -82,7 +82,7 @@ DopamineNeuron = ann.Neuron(
     equations="""
         s_inh = sum(inh)
         aux =   if firing: 
-                    firing*(pos(1.0-baseline_dopa-s_inh) + baseline_dopa) + (1-firing)*(-factor_inh*sum(inh))  
+                    firing * baseline_dopa + (1-firing)*(-factor_inh*sum(inh))  
                 else: baseline_dopa
         tau*dmp/dt + mp =  aux
         r = mp : min = 0.0
@@ -135,7 +135,7 @@ PreCovariance_inhibitory = ann.Synapse(
         K_burst = 1.0 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection
-        threshold_pre = 0.05 : projection
+        threshold_pre = 0.0 : projection
         threshold_post = 0.0 : projection
         negterm = 1 : projection
     """,

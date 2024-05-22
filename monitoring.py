@@ -368,7 +368,7 @@ class PopMonitor(object):
         # time length
         t_max = monitor.shape[0] - 1
         results = monitor[0]
-        val_max = np.amax(results)
+        val_max = np.amax(monitor)
 
         assert results.shape[iter_dim] <= np.prod(plot_order), ('There are not enough subplots to plot all dimensions '
                                                                 'of the population!!!')
@@ -406,14 +406,13 @@ class PopMonitor(object):
                     plot.set_data(result)
 
             time_slider.on_changed(update)
-
             plt.show()
+
         else:
             def update_animate(t):
-                results = monitor[t]
-
-                for result, plot in zip(np.rollaxis(results, iter_dim), ls):
+                for result, plot in zip(np.rollaxis(monitor[int(t)], iter_dim), ls):
                     plot.set_data(result)
+                    return ls
 
             folder, _ = os.path.split(save_name)
             if folder and not os.path.exists(folder):

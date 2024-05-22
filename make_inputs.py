@@ -54,15 +54,16 @@ def train_position(init_position: np.ndarray,
     ann.simulate(t_wait)
 
     # set inputs
-    PM.baseline = base_pm
     S1.baseline = base_s1
     CM.baseline = base_m1
     ann.simulate(100.)
 
     # send reward
     SNc.firing = 1
-    ann.simulate_until(200, population=SNr)
+    PM.baseline = base_pm
+    ann.simulate_until(200., population=SNr)
     SNc.firing = 0
+    PM.baseline = 0
 
     ann.reset(populations=True, monitors=False)
 
@@ -70,7 +71,7 @@ def train_position(init_position: np.ndarray,
     return np.array([random_x, random_y])
 
 
-def test_movement(scale_movement: float = 1.0, t_wait: float = 100.) -> None:
+def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
 
     points_to_follow = [
         np.array((-100, 200)),
@@ -98,7 +99,8 @@ def test_movement(scale_movement: float = 1.0, t_wait: float = 100.) -> None:
         ann.simulate(t_wait)
 
         # set inputs
-        SNc.firing = 1
         PM.baseline = input_pm
         S1.baseline = input_s1
         ann.simulate(distance * scale_movement)
+
+        ann.reset(monitors=False)
