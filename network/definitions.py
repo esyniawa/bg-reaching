@@ -82,7 +82,7 @@ DopamineNeuron = ann.Neuron(
     equations="""
         s_inh = sum(inh)
         aux =   if firing: 
-                    firing * baseline_dopa + (1-firing)*(-factor_inh*sum(inh))  
+                    firing * pos(1.0 - s_inh) + (1-firing)*baseline_dopa  
                 else: baseline_dopa
         tau*dmp/dt + mp =  aux
         r = mp : min = 0.0
