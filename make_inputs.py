@@ -10,8 +10,9 @@ from kinematics.planar_arms import PlanarArms
 
 def make_inputs(start_point: list[float, float] | tuple[float, float],
                 end_point: list[float, float] | tuple[float, float],
-                distance_rate: float = 50.,
-                trace_factor: float = .8,
+                distance_rate: float = 30.,
+                trace_factor: float = .5,
+                training_trace: bool = True,
                 show_input: bool = False):
 
     motor_angle, distance = PlanarArms.calc_motor_vector(init_pos=np.array(start_point),
@@ -25,11 +26,15 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
                                norm=True,
                                plot=show_input)
 
-    n_trace = int(np.floor(distance/distance_rate))
-    if n_trace > 0:
-        trace = np.linspace(start=start_point, stop=end_point, endpoint=False, num=n_trace)
-        for point in trace:
-            input_pm += trace_factor * bivariate_gauss(xy=state_space, mu=point, sigma=parameters['sig_pm'], norm=True)
+    if training_trace:
+        n_trace = int(np.floor(distance/distance_rate))
+        if n_trace > 0:
+            trace = np.linspace(start=start_point, stop=end_point, endpoint=False, num=n_trace)
+            for point in trace:
+                input_pm += trace_factor * bivariate_gauss(xy=state_space,
+                                                           mu=point,
+                                                           sigma=parameters['sig_pm'],
+                                                           norm=True)
 
     # calculate s1 input
     input_s1 = bivariate_gauss(xy=state_space,
@@ -46,6 +51,7 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 
 
 def train_position(init_position: np.ndarray,
+                   t_reward: float = 300.,
                    t_wait: float = 50.) -> np.ndarray:
 
     random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
@@ -55,8 +61,6 @@ def train_position(init_position: np.ndarray,
 
     base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
                                                       end_point=[random_x, random_y])
-
-    ann.enable_learning()
 
     # simulation state
     PM.baseline = 0
@@ -72,7 +76,7 @@ def train_position(init_position: np.ndarray,
     # send reward
     SNc.firing = 1
     PM.baseline = base_pm
-    ann.simulate_until(200., population=SNr)
+    ann.simulate_until(t_reward, population=SNr)
     SNc.firing = 0
     PM.baseline = 0
 
@@ -80,6 +84,35 @@ def train_position(init_position: np.ndarray,
 
     # return new position
     return np.array([random_x, random_y])
+
+
+def train_fixed_position(init_position: np.ndarray,
+                         goal: np.ndarray,
+                         t_reward: float = 300.,
+                         t_wait: float = 50.) -> None:
+
+    base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
+                                                      end_point=goal)
+
+    # simulation state
+    PM.baseline = 0
+    S1.baseline = 0
+    CM.baseline = 0
+    ann.simulate(t_wait)
+
+    # set inputs
+    S1.baseline = base_s1
+    CM.baseline = base_m1
+    ann.simulate(100.)
+
+    # send reward
+    SNc.firing = 1
+    PM.baseline = base_pm
+    ann.simulate_until(t_reward, population=SNr)
+    SNc.firing = 0
+    PM.baseline = 0
+
+    ann.reset(populations=True, monitors=False)
 
 
 def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
@@ -94,13 +127,12 @@ def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
     n_points = len(points_to_follow)
 
     # simulate movement
-    ann.disable_learning()
-
     for i, point in enumerate(points_to_follow):
 
         # make inputs for PM
         input_pm, input_s1, _, distance = make_inputs(start_point=point,
-                                                      end_point=points_to_follow[(i+1) % n_points])
+                                                      end_point=points_to_follow[(i+1) % n_points],
+                                                      training_trace=False)
 
         # simulation state
         SNc.firing = 0
@@ -115,11 +147,3 @@ def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
         ann.simulate(distance * scale_movement)
 
         ann.reset(monitors=False)
-
-
-input_pm, input_s1, _, distance = make_inputs(start_point=np.array((-100, 200)),
-                                              end_point=np.array((100, 50)))
-
-fig = plt.figure()
-plt.imshow(input_pm)
-plt.show()
