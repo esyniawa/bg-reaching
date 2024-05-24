@@ -52,7 +52,8 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 
 def train_position(init_position: np.ndarray,
                    t_reward: float = 300.,
-                   t_wait: float = 50.) -> np.ndarray:
+                   t_wait: float = 50.,
+                   trace: bool = True) -> np.ndarray:
 
     random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
                                  high=parameters['x_reaching_space_limits'][1])
@@ -60,7 +61,8 @@ def train_position(init_position: np.ndarray,
                                  high=parameters['y_reaching_space_limits'][1])
 
     base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
-                                                      end_point=[random_x, random_y])
+                                                      end_point=[random_x, random_y],
+                                                      training_trace=trace)
 
     # simulation state
     PM.baseline = 0
@@ -89,10 +91,11 @@ def train_position(init_position: np.ndarray,
 def train_fixed_position(init_position: np.ndarray,
                          goal: np.ndarray,
                          t_reward: float = 300.,
-                         t_wait: float = 50.) -> None:
+                         t_wait: float = 50.,
+                         trace: bool = True) -> None:
 
     base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
-                                                      end_point=goal)
+                                                      end_point=goal, training_trace=trace)
 
     # simulation state
     PM.baseline = 0
@@ -115,7 +118,9 @@ def train_fixed_position(init_position: np.ndarray,
     ann.reset(populations=True, monitors=False)
 
 
-def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
+def test_movement(scale_movement: float = 1.0,
+                  scale_pm: float = 5.0,
+                  t_wait: float = 50.) -> None:
 
     points_to_follow = [
         np.array((-100, 200)),
@@ -142,7 +147,7 @@ def test_movement(scale_movement: float = 1.0, t_wait: float = 50.) -> None:
         ann.simulate(t_wait)
 
         # set inputs
-        PM.baseline = input_pm
+        PM.baseline = scale_pm * input_pm
         S1.baseline = input_s1
         ann.simulate(distance * scale_movement)
 
