@@ -40,8 +40,8 @@ class PlanarArms:
         self.trajectory_thetas_left = [self.angles_left]
         self.trajectory_thetas_right = [self.angles_right]
 
-        self.trajectory_gradient_left = [np.array((0, 0))]
-        self.trajectory_gradient_right = [np.array((0, 0))]
+        self.trajectory_gradient_left = [np.array((0., 0.))]
+        self.trajectory_gradient_right = [np.array((0., 0.))]
 
         self.end_effector_left = [PlanarArms.forward_kinematics(arm='left',
                                                                 thetas=self.angles_left,
@@ -266,7 +266,7 @@ class PlanarArms:
 
             for j, delta_theta in enumerate(trajectory):
                 self.trajectory_gradient_right.append(delta_theta - self.trajectory_thetas_right[-1])
-                self.trajectory_gradient_left.append(np.array((0, 0)))
+                self.trajectory_gradient_left.append(np.array((0., 0.)))
 
                 self.trajectory_thetas_right.append(delta_theta)
                 self.trajectory_thetas_left.append(self.angles_left)
@@ -288,7 +288,7 @@ class PlanarArms:
 
             for j, delta_theta in enumerate(trajectory):
                 self.trajectory_gradient_left.append(delta_theta - self.trajectory_thetas_left[-1])
-                self.trajectory_gradient_right.append(np.array((0, 0)))
+                self.trajectory_gradient_right.append(np.array((0., 0.)))
 
                 self.trajectory_thetas_left.append(delta_theta)
                 self.trajectory_thetas_right.append(self.angles_right)
@@ -333,7 +333,7 @@ class PlanarArms:
                                                           radians=True)
 
                 self.trajectory_gradient_right.append(new_theta - self.trajectory_thetas_right[-1])
-                self.trajectory_gradient_left.append(np.array((0, 0)))
+                self.trajectory_gradient_left.append(np.array((0., 0.)))
 
                 self.trajectory_thetas_right.append(new_theta)
                 self.trajectory_thetas_left.append(self.angles_left)
@@ -364,7 +364,7 @@ class PlanarArms:
                                                           radians=True)
 
                 self.trajectory_gradient_left.append(new_theta - self.trajectory_thetas_left[-1])
-                self.trajectory_gradient_right.append(np.array((0, 0)))
+                self.trajectory_gradient_right.append(np.array((0., 0.)))
 
                 self.trajectory_thetas_left.append(new_theta)
                 self.trajectory_thetas_right.append(self.angles_right)
@@ -519,8 +519,8 @@ class PlanarArms:
             self.trajectory_thetas_right.append(self.angles_right)
             self.trajectory_thetas_left.append(self.angles_left)
 
-            self.trajectory_gradient_right.append(np.array((0, 0)))
-            self.trajectory_gradient_left.append(np.array((0, 0)))
+            self.trajectory_gradient_right.append(np.array((0., 0.)))
+            self.trajectory_gradient_left.append(np.array((0., 0.)))
 
             self.end_effector_right.append(self.end_effector_right[-1])
             self.end_effector_left.append(self.end_effector_left[-1])
