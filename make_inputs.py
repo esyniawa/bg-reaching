@@ -120,6 +120,7 @@ def train_fixed_position(init_position: np.ndarray,
 
 def test_movement(scale_movement: float = 1.0,
                   scale_pm: float = 5.0,
+                  scale_s1: float = 2.0,
                   t_wait: float = 50.) -> None:
 
     points_to_follow = [
@@ -148,7 +149,7 @@ def test_movement(scale_movement: float = 1.0,
 
         # set inputs
         PM.baseline = scale_pm * input_pm
-        S1.baseline = input_s1
+        S1.baseline = scale_s1 * input_s1
         ann.simulate(distance * scale_movement)
 
         ann.reset(monitors=False)
