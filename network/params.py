@@ -15,7 +15,7 @@ parameters = {
     'reaching_points': [(-250, 150), (-200, 150), (150, 250), (-100, 150), (-50, 150),
                         (0, 150),  (50, 150), (100, 150),  (150, 150), (200, 150), (250, 150)],
 
-    'dim_motor': 22
+    'dim_motor': 24
 }
 
 parameters['motor_orientations'] = np.linspace(0, 360, parameters['dim_motor'], endpoint=False)
@@ -37,4 +37,4 @@ state_space = create_state_space(
 )
 
 parameters['dim_s1'] = state_space.shape[:-1]
-parameters['dim_str'] = tuple(list(parameters['dim_s1']) + [25])
+parameters['dim_str'] = tuple(list(parameters['dim_s1']) + [30])
