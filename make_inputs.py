@@ -53,7 +53,7 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 def train_position(init_position: np.ndarray,
                    t_reward: float = 300.,
                    t_wait: float = 50.,
-                   trace: bool = True) -> np.ndarray:
+                   trace: bool = False) -> np.ndarray:
 
     random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
                                  high=parameters['x_reaching_space_limits'][1])
@@ -92,7 +92,7 @@ def train_fixed_position(init_position: np.ndarray,
                          goal: np.ndarray,
                          t_reward: float = 300.,
                          t_wait: float = 50.,
-                         trace: bool = True) -> None:
+                         trace: bool = False) -> None:
 
     base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
                                                       end_point=goal, training_trace=trace)
