@@ -40,12 +40,15 @@ if __name__ == '__main__':
     training_cons.extract_weights()
 
     positions = []
-    for trial in range(N_training_trials):
-        positions.append(init_position)
-        init_position = train_position(init_position=init_position)
+    sim_times = []
 
     for start, end in zip(init_positions, goals):
         train_fixed_position(init_position=start, goal=end)
+
+    for trial in range(N_training_trials):
+        positions.append(init_position)
+        init_position, sim_time = train_position(init_position=init_position, return_sim_time=True)
+        sim_times.append(sim_time)
 
     # save
     # rates
@@ -54,8 +57,9 @@ if __name__ == '__main__':
     training_cons.extract_weights()
     training_cons.save_cons(folder='results/' + 'training_' + folder)
     training_cons.reset()
-    # positions
+    # positions and sim times
     np.save('results/' + 'training_' + folder + 'learned_positions.npy', np.array(positions))
+    np.save('results/' + 'training_' + folder + 'sim_times.npy', np.array(sim_times))
 
     # testing condition
     test_monitors.start()

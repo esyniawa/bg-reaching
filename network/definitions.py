@@ -120,7 +120,7 @@ PostCovarianceNoThreshold = ann.Synapse(
         condition_0 = if (trace>0.0) and (w >0.0): 1 else: 0
         dopa_mod =  if (DA_type*dopa_sum>0): DA_type*K_burst*dopa_sum
                     else: condition_0*DA_type*K_dip*dopa_sum
-        delta = (dopa_mod* trace - alpha*pos(post.r - mean(post.r) - threshold_post)*pos(post.r - mean(post.r) - threshold_post))
+        delta = dopa_mod * trace - alpha*pos(post.r - mean(post.r) - threshold_post)
         tau*dw/dt = delta : min = 0.0
     """
 )
@@ -131,7 +131,7 @@ PreCovariance_inhibitory = ann.Synapse(
     parameters="""
         tau=1000.0 : projection
         tau_alpha=10.0 : projection
-        regularization_threshold = 1.0 : projection
+        regularization_threshold = 1.2 : projection
         K_burst = 1.0 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection

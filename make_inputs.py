@@ -11,7 +11,7 @@ from kinematics.planar_arms import PlanarArms
 def make_inputs(start_point: list[float, float] | tuple[float, float],
                 end_point: list[float, float] | tuple[float, float],
                 distance_rate: float = 30.,
-                trace_factor: float = .5,
+                trace_factor: float = .8,
                 training_trace: bool = True,
                 show_input: bool = False):
 
@@ -53,7 +53,8 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 def train_position(init_position: np.ndarray,
                    t_reward: float = 300.,
                    t_wait: float = 50.,
-                   trace: bool = False) -> np.ndarray:
+                   trace: bool = True,
+                   return_sim_time: bool = False) -> np.ndarray:
 
     random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
                                  high=parameters['x_reaching_space_limits'][1])
@@ -78,21 +79,24 @@ def train_position(init_position: np.ndarray,
     # send reward
     SNc.firing = 1
     PM.baseline = base_pm
-    ann.simulate_until(t_reward, population=SNr)
+    time = ann.simulate_until(t_reward, population=SNr)
     SNc.firing = 0
     PM.baseline = 0
 
     ann.reset(populations=True, monitors=False)
 
     # return new position
-    return np.array([random_x, random_y])
+    if return_sim_time:
+        return np.array([random_x, random_y]), time
+    else:
+        return np.array([random_x, random_y])
 
 
 def train_fixed_position(init_position: np.ndarray,
                          goal: np.ndarray,
                          t_reward: float = 300.,
                          t_wait: float = 50.,
-                         trace: bool = False) -> None:
+                         trace: bool = True) -> None:
 
     base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
                                                       end_point=goal, training_trace=trace)
@@ -122,6 +126,9 @@ def test_movement(scale_movement: float = 1.0,
                   scale_pm: float = 5.0,
                   scale_s1: float = 5.0,
                   t_wait: float = 50.) -> None:
+
+    # disable learning
+    ann.disable_learning()
 
     points_to_follow = [
         np.array((-100, 200)),
