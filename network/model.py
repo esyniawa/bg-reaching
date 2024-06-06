@@ -24,7 +24,7 @@ GPe = ann.Population(geometry=parameters['dim_motor'], neuron=LinearNeuron, name
 GPe.noise = 0.01
 GPe.baseline = 0.2
 
-SNr = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='SNr', stop_condition='r<0.01')
+SNr = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='SNr', stop_condition='r<0.01',)
 SNr.noise = 0.05
 SNr.baseline = 1.1
 
@@ -54,9 +54,6 @@ S1_StrD1.connect_from_matrix(w_s1)
 PM_StrD1 = ann.Projection(pre=PM, post=StrD1, target='exc', synapse=PostCovarianceNoThreshold, name='PM_D1')
 PM_StrD1.connect_all_to_all(0.0)
 
-StrD1_StrD1 = ann.Projection(pre=StrD1, post=StrD1, target='inh')
-StrD1_StrD1.connect_all_to_all(0.2)
-
 StrD1_SNr = ann.Projection(pre=StrD1, post=SNr, target='inh', synapse=PreCovariance_inhibitory, name='D1_SNr')
 StrD1_SNr.connect_all_to_all(0.0)
 
@@ -70,14 +67,11 @@ SNc_SNr.connect_all_to_all(1.0)
 SNc_StrD1 = ann.Projection(pre=SNc, post=StrD1, target='dopa')
 SNc_StrD1.connect_all_to_all(1.0)
 
-# SNr_SNr = ann.Projection(pre=SNr, post=SNr, target='exc', synapse=ReversedSynapse)
-# SNr_SNr.connect_all_to_all(0.1)
-
 SNr_VL = ann.Projection(pre=SNr, post=VL, target='inh')
 SNr_VL.connect_one_to_one(1.0)
 
 VL_M1 = ann.Projection(pre=VL, post=M1, target='exc')
-VL_M1.connect_one_to_one(0.75)
+VL_M1.connect_one_to_one(1.0)
 
 # Output projection
 PopCode_out = ann.Projection(pre=M1, post=Output_Pop, target='exc')
@@ -95,3 +89,13 @@ M1_StrD1.connect_all_to_all(ann.Uniform(min=0.0, max=0.5))
 # Reward prediction
 StrD1_SNc = ann.Projection(pre=StrD1, post=SNc, target='inh', synapse=DAPrediction)
 StrD1_SNc.connect_all_to_all(weights=0.0)
+
+# Laterals
+SNr_SNr = ann.Projection(pre=SNr, post=SNr, target='exc', synapse=ReversedSynapse)
+SNr_SNr.connect_all_to_all(0.1)
+
+StrD1_StrD1 = ann.Projection(pre=StrD1, post=StrD1, target='inh')
+StrD1_StrD1.connect_all_to_all(0.25)
+
+M1_M1 = ann.Projection(pre=M1, post=M1, target='inh')
+M1_M1.connect_all_to_all(0.1)

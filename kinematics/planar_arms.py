@@ -781,8 +781,10 @@ class PlanarArms:
         return angle, norm
 
     @staticmethod
-    def calc_position_from_motor_vector(init_pos: np.ndarray[float, float], angle: float, norm: float,
-                                        arm: str, radians: bool = False):
+    def calc_position_from_motor_vector(init_pos: np.ndarray[float, float],
+                                        angle: float,
+                                        norm: float,
+                                        radians: bool = False):
 
         x, y = init_pos
 
