@@ -56,18 +56,38 @@ def create_state_space(x_bound: tuple[int, int],
     return xy
 
 
+def multivariate_gauss(xy: np.ndarray,
+                       mu: np.ndarray,
+                       sigma: np.ndarray,
+                       norm: bool = False) -> np.ndarray:
+
+    # check if dimensions are correct
+    dim = mu.shape[0]
+    if dim != sigma.shape[0] or dim != sigma.shape[1]:
+        raise ValueError("Mu must be a vector with the dimensions n x 1 and "
+                         "sigma must be a matrix with dimensions n x n.")
+
+    det_sigma = np.linalg.det(sigma)
+
+    if np.all(np.linalg.eigvals(sigma) > 0):
+        inv_sigma = np.linalg.inv(sigma)
+    else:
+        raise ValueError("Sigma matrix must be positive definite.")
+
+    exp = np.einsum('...k,kl,...l->...', xy - mu, inv_sigma, xy - mu)
+
+    if norm:
+        return np.exp(-0.5 * exp) / np.sqrt((2*np.pi) ** dim * det_sigma)
+    else:
+        return np.exp(-0.5 * exp)
+
+
 def bivariate_gauss(mu: tuple[float, float],
                     sigma: float,
                     xy: np.ndarray,
                     norm: bool = False, plot: bool = False, limit: float | None = None):
 
-    from scipy.stats import multivariate_normal
-
-    rv = multivariate_normal(mu, cov=sigma * np.identity(2))
-    a = rv.pdf(xy)
-
-    if norm:
-        a /= np.max(a)
+    a = multivariate_gauss(xy, mu=np.array(mu), sigma=sigma * np.eye(len(mu)), norm=norm)
 
     if limit is not None:
         a[a < limit] = np.NaN
@@ -83,7 +103,3 @@ def bivariate_gauss(mu: tuple[float, float],
         plt.show()
 
     return a
-
-
-if __name__ == '__main__':
-    circ_gauss(0, 25, 22, scal=15, plot=True)

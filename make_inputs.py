@@ -11,7 +11,7 @@ from kinematics.planar_arms import PlanarArms
 def make_inputs(start_point: list[float, float] | tuple[float, float],
                 end_point: list[float, float] | tuple[float, float],
                 distance_rate: float = 30.,
-                trace_factor: float = .8,
+                trace_factor: float = .5,
                 training_trace: bool = True,
                 show_input: bool = False):
 
@@ -23,7 +23,6 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
     input_pm = bivariate_gauss(xy=state_space,
                                mu=end_point,
                                sigma=parameters['sig_pm'],
-                               norm=True,
                                plot=show_input)
 
     if training_trace:
@@ -33,14 +32,12 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
             for point in trace:
                 input_pm += trace_factor * bivariate_gauss(xy=state_space,
                                                            mu=point,
-                                                           sigma=parameters['sig_pm'],
-                                                           norm=True)
+                                                           sigma=parameters['sig_pm'])
 
     # calculate s1 input
     input_s1 = bivariate_gauss(xy=state_space,
                                mu=start_point,
                                sigma=parameters['sig_s1'],
-                               norm=True,
                                plot=show_input)
 
     # calculate motor input
