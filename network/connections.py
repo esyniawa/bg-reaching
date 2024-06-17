@@ -135,3 +135,47 @@ def pop_code_output(preferred_angles: np.ndarray, radians: bool = False):
             w[2, i] = np.sin(np.radians(angle))
 
     return w
+
+
+def laterals_layerwise(Dim, axis,
+                       weight: float = 1.0,
+                       allow_self_con: bool = False):
+
+    # layer_pre, neurons_pre = preDim
+    # layer_post, neurons_post = postDim
+    #
+    # if layer_post != layer_pre:
+    #     raise AttributeError
+    #
+    # w = np.zeros((layer_post, neurons_post, layer_pre, neurons_pre))
+    # for layer in range(layer_post):
+    #     for n_pre in range(neurons_pre):
+    #         for n_post in range(neurons_post):
+    #             if n_post != n_pre:
+    #                 w[layer, n_post, layer, n_pre] = weight
+
+    if isinstance(Dim, tuple):
+        Dim = list(Dim)
+
+    new_dim = Dim.copy()
+    pre_ = new_dim.pop(axis)
+
+    n = np.prod(new_dim)
+    new_dim += [pre_]
+
+    w = np.array([[[[None] * pre_] * n] * pre_] * n)
+
+    for layer in range(n):
+        for pre in range(pre_):
+            for post in range(pre_):
+                if pre != post:
+                    w[layer, post, layer, pre] = weight
+
+    w = w.reshape(new_dim + new_dim)
+    w = np.moveaxis(w, len(Dim)-1, axis)
+    # print(w.shape)
+    w = np.moveaxis(w, -1, axis+len(Dim))
+    # print(w.shape)
+    w = w.reshape((np.prod(Dim), np.prod(Dim)))
+
+    return w

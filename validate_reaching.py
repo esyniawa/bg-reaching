@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     # init monitors
     folder = f'validate_model_{sim_id}/'
-    training_monitors = PopMonitor(pops_monitor, auto_start=False, sampling_rate=200.)
+    training_monitors = PopMonitor(pops_monitor, auto_start=False, sampling_rate=100.)
     training_cons = ConMonitor([PM_StrD1, StrD1_SNr])
 
     test_monitors = PopMonitor(pops_monitor, auto_start=False, sampling_rate=1.0)
@@ -63,7 +63,8 @@ if __name__ == '__main__':
 
     # testing condition
     test_monitors.start()
-    test_movement()
+    for scale in [1.0, 1.5, 2.0, 3.0, 5.0]:
+        test_movement(scale_s1=scale)
 
     # save data
     test_monitors.save(folder='results/' + 'test_' + folder, delete=True)

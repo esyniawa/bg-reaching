@@ -95,7 +95,8 @@ SNr_SNr = ann.Projection(pre=SNr, post=SNr, target='exc', synapse=ReversedSynaps
 SNr_SNr.connect_all_to_all(0.1)
 
 StrD1_StrD1 = ann.Projection(pre=StrD1, post=StrD1, target='inh')
-StrD1_StrD1.connect_all_to_all(0.25)
+wD1_D1 = laterals_layerwise(Dim=StrD1.geometry, axis=2, weight=0.2)
+StrD1_StrD1.connect_from_matrix(wD1_D1)
 
 M1_M1 = ann.Projection(pre=M1, post=M1, target='inh')
 M1_M1.connect_all_to_all(0.1)
