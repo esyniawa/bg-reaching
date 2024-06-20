@@ -157,3 +157,44 @@ def test_movement(scale_movement: float = 1.0,
         ann.simulate(distance * scale_movement)
 
         ann.reset(monitors=False)
+
+
+def sim_movement_m1_input(arm: str,
+                          points_to_follow: list[np.ndarray] | None = None,
+                          sim_time: float = 500.,
+                          plasticity: bool = True,
+                          t_wait: float = 50.) -> None:
+
+    if points_to_follow is None:
+        points_to_follow = []
+        for _ in range(2):
+            points_to_follow.append(PlanarArms.random_position(arm))
+
+    # disable learning
+    if plasticity:
+        ann.enable_learning()
+    else:
+        ann.disable_learning()
+
+    n_points = len(points_to_follow)
+    # simulate movement
+    for i, point in enumerate(points_to_follow):
+
+        # make inputs for PM
+        _, input_s1, input_m1, _ = make_inputs(start_point=point,
+                                        end_point=points_to_follow[(i+1) % n_points],
+                                        training_trace=False)
+
+        # simulation state
+        SNc.firing = 0
+        PM.baseline = 0
+        S1.baseline = 0
+        CM.baseline = 0
+        ann.simulate(t_wait)
+
+        # set inputs
+        SNc.firing = 1
+        S1.baseline = input_s1
+        CM.baseline = input_m1
+        ann.simulate(sim_time)
+

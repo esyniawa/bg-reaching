@@ -5,12 +5,36 @@ import os
 
 
 def ceil(a: float, precision: int = 0):
+    """
+    Calculate the ceiling value of a number 'a' with a specified precision.
+
+    Parameters:
+    :param a: The number for which the ceiling value needs to be calculated.
+    :param precision: The number of decimal places to consider for precision (default is 0).
+
+    :return: The ceiling value of 'a' with the specified precision.
+
+    Example:
+    ceil(3.14159, 2) returns 3.15
+    ceil(5.67, 0) returns 6.0
+    """
     return np.true_divide(np.ceil(a * 10**precision), 10**precision)
+
+
+def find_largest_factors(c: int):
+    """
+    Returns the two largest factors a and b of an integer c, such that a * b = c.
+    """
+    for a in range(int(c**0.5), 0, -1):
+        if c % a == 0:
+            b = c // a
+            return b, a
+    return 1, c
 
 
 class PopMonitor(object):
     def __init__(self, populations: tuple | list,
-                 variables: tuple | list | None = None,
+                 variables: tuple[str] | list[str] | None = None,
                  sampling_rate: float = 2.0,
                  auto_start: bool = False):
 
@@ -91,147 +115,122 @@ class PopMonitor(object):
 
         return m.reshape(shape)
 
-    def plot_rates(self, plot_order: tuple[int, int],
-                   plot_type: str = 'Plot',
-                   fig_size: tuple[float, float] | list[float, float] = (5, 5),
-                   save_name: str = None) -> None:
-
-        """
-        Plots 2D populations rates.
-        :param plot_type: can be 'Plot' or 'Matrix'
-        :param plot_order:
-        :param fig_size:
-        :param save_name:
-        :return:
-        """
-
-        ncols, nrows = plot_order
-        results = self.get(delete=False, reshape=True)
-
-        fig = plt.figure(figsize=fig_size)
-        for i, key in enumerate(results):
-            plt.subplot(nrows, ncols, i + 1)
-            if plot_type == 'Plot':
-                if results[key].ndim > 2:
-                    results[key] = PopMonitor._reshape(results[key])
-
-                plt.plot(results[key])
-                plt.ylabel('Activity')
-                plt.xlabel(self.variables[i], loc='right')
-
-            elif plot_type == 'Matrix':
-                if results[key].ndim > 3:
-                    results[key] = PopMonitor._reshape(results[key], dim=3)
-
-                res_max = np.amax(abs(results[key]))
-                img = plt.contourf(results[key].T, cmap='RdBu', vmin=-res_max, vmax=res_max)
-                plt.colorbar(img, label=self.variables[i], orientation='horizontal')
-                plt.xlabel('t', loc='right')
-
-            plt.title(self.monitors[i].object.name, loc='left')
-
-        if save_name is None:
-            plt.show()
-        else:
-            folder, _ = os.path.split(save_name)
-            if folder and not os.path.exists(folder):
-                os.makedirs(folder)
-
-            plt.savefig(save_name)
-            plt.close(fig)
-
     def animate_rates(self,
-                      plot_order: tuple[int, int],
+                      plot_order: tuple[int, int] | None = None,
                       plot_types: str | list | tuple = 'Bar',
-                      fig_size: tuple[float, float] | list[float, float] = (5, 5),
+                      fig_size: tuple[float, float] | list[float, float] = (10, 10),
                       t_init: int = 0,
                       save_name: str = None,
                       label_ticks: bool = True,
                       frames_per_sec: int | None = 10):
 
+        # TODO: Making a plot type class to trim the code
+
         from matplotlib.widgets import Slider
         import matplotlib.animation as animation
 
-        ncols, nrows = plot_order
+        # get results
         results = self.get(delete=False, reshape=True)
 
+        # define plot layout
+        if plot_order is None:
+            ncols, nrows = find_largest_factors(len(results))
+        else:
+            ncols, nrows = plot_order
+
+        # define plot types if not defined
         if isinstance(plot_types, str):
             plot_types = [plot_types] * len(results)
 
+        # fill the figure
         fig = plt.figure(figsize=fig_size)
-        ls = []
-        # fig.subplots_adjust(left=1, bottom=1, right=1, top=1, wspace=None, hspace=None)
+        subfigs = fig.subfigures(nrows, ncols)
 
-        for i, key in enumerate(results):
+        plot_lists = []
+        for outer_i, (subfig, key) in enumerate(zip(subfigs.flat, results)):
 
-            # define type of the plot
-            plot_type = plot_types[i]
+            # assignment plot type + key
+            plot_type = plot_types[outer_i]
 
+            # set title
+            subfig.suptitle(key)
+            subfig.subplots_adjust(left=0.1, bottom=0.2, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
+
+            # good ol' switcharoo
             if plot_type == 'Matrix':
-
-                ax = fig.add_subplot(nrows, ncols, i + 1)
-                ax.set_title(self.monitors[i].object.name, loc='left')
-
-                if results[key].ndim > 3:
-                    results[key] = PopMonitor._reshape(results[key], dim=3)
+                if results[key].ndim > 4:
+                    results[key] = PopMonitor._reshape(results[key])
                 res_max = np.amax(abs(results[key]))
 
-                l = ax.imshow(results[key][t_init], vmin=-res_max, vmax=res_max, cmap='RdBu',
-                              origin='lower', interpolation='none')
+                # subplots
+                if results[key].ndim == 4:
+                    last_dim = results[key].shape[-1]
+                    inner_rows, inner_cols = find_largest_factors(last_dim)
+
+                    # add subsubplots
+                    axs = subfig.subplots(inner_rows, inner_cols)
+                    plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95, wspace=0.05, hspace=0.05)
+
+                    plots = []
+                    for ax, result in zip(axs.flat, np.rollaxis(results[key][t_init], -1)):
+                        p = ax.imshow(result, vmin=-res_max, vmax=res_max, cmap='RdBu',
+                                      origin='lower', interpolation='none')
+                        # set off tick labels for better arrangement
+                        ax.set_xticks([])
+                        ax.set_yticks([])
+
+                        plots.append(p)
+                else:
+                    ax = subfig.subplots()
+                    plots = ax.imshow(results[key][t_init], vmin=-res_max, vmax=res_max, cmap='RdBu',
+                                      origin='lower', interpolation='none')
 
             elif plot_type == 'Bar':
 
-                ax = fig.add_subplot(nrows, ncols, i + 1)
-                ax.set_title(self.monitors[i].object.name, loc='left')
-
-                if results[key].ndim > 2:
-                    results[key] = PopMonitor._reshape(results[key])
-
-                res_max = np.amax(results[key])
-
-                # plotting
-                l = ax.bar(x=np.arange(1, results[key].shape[1] + 1, 1), height=results[key][t_init], width=0.5)
-
-                ax.set_ylabel('Activity')
-                ax.set_xlabel(self.variables[i], loc='right')
-                ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
-
-            elif plot_type == 'Plot':
-
-                ax = fig.add_subplot(nrows, ncols, i + 1)
-                ax.set_title(self.monitors[i].object.name, loc='left')
-
                 if results[key].ndim > 3:
-                    results[key] = PopMonitor._reshape(results[key], dim=3)
+                    results[key] = PopMonitor._reshape(results[key])
+                res_max = np.amax(abs(results[key]))
 
-                res_max = np.amax(results[key])
+                # subplots
+                if results[key].ndim == 3:
+                    last_dim = results[key].shape[-1]
+                    inner_rows, inner_cols = find_largest_factors(last_dim)
 
-                # plotting
-                l = ax.plot(results[key][t_init])
-                ax.set_ylabel('Activity')
-                ax.set_xlabel(self.variables[i], loc='right')
-                ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
+                    axs = subfig.subplots(inner_rows, inner_cols)
+                    plots = []
+                    for ax, result in zip(axs.flat, np.rollaxis(results[key][t_init], -1)):
+                        p = ax.bar(x=np.arange(1, result.shape[1] + 1, 1), height=result, width=0.5)
+
+                        ax.set_ylabel('Activity')
+                        ax.set_xlabel(self.variables[outer_i], loc='right')
+                        ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
+
+                        plots.append(p)
+                else:
+                    ax = subfig.subplots()
+                    plots = ax.bar(x=np.arange(1, results[key].shape[1] + 1, 1), height=results[key][t_init], width=0.5)
+
+                    ax.set_ylabel('Activity')
+                    ax.set_xlabel(self.variables[outer_i], loc='right')
+                    ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
 
             elif plot_type == 'Polar':
 
-                ax = fig.add_subplot(nrows, ncols, i + 1, projection='polar')
-                ax.set_title(self.monitors[i].object.name, loc='left')
-
                 res_max = np.amax(np.sqrt(results[key][:, 1] ** 2 + results[key][:, 2] ** 2))
+                ax = subfig.add_subplot(projection='polar')
 
                 if results[key].ndim > 2:
                     results[key] = PopMonitor._reshape(results[key])
 
                 rad = (0, np.radians(results[key][t_init, 0]))
                 r = (0, np.sqrt(results[key][t_init, 1] ** 2 + results[key][t_init, 2] ** 2))
-                l = ax.plot(rad, r)
+                plots = ax.plot(rad, r)
                 ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
                 ax.set_ylabel([])
 
             elif plot_type == 'Line':
 
-                ax = fig.add_subplot(nrows, ncols, i + 1)
-                ax.set_title(self.monitors[i].object.name, loc='left')
+                ax = subfig.subplots()
 
                 if results[key].ndim > 2:
                     results[key] = PopMonitor._reshape(results[key], dim=3)
@@ -240,13 +239,13 @@ class PopMonitor(object):
 
                 # plotting
                 ax.plot(results[key])
-                l = ax.plot(results[key][t_init], marker='x', color='r')
+                plots = ax.plot(results[key][t_init], marker='x', color='r')
                 ax.set_ylabel('Activity')
                 ax.set_xlabel('t', loc='right')
                 ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
 
             elif plot_type is None:
-                pass
+                plots = None
 
             else:
                 raise AssertionError('You must clarify which type of plot do you want!')
@@ -255,14 +254,14 @@ class PopMonitor(object):
                 plt.xticks([])
                 plt.yticks([])
 
-            ls.append((key, l, plot_type))
+            plot_lists.append((key, plots, plot_type))
 
         # time length
         val_max = results[key].shape[0] - 1
 
         if save_name is None:
 
-            ax_slider = plt.axes((0.25, 0.05, 0.5, 0.03))
+            ax_slider = plt.axes((0.2, 0.05, 0.5, 0.03))
             time_slider = Slider(
                 ax=ax_slider,
                 label='n iteration',
@@ -274,30 +273,33 @@ class PopMonitor(object):
             def update(val):
                 t = int(time_slider.val)
                 time_slider.valtext.set_text(t)
-                for key, plot, plt_type in ls:
+
+                for key, subfigure, plt_type in plot_lists:
 
                     if plt_type == 'Matrix':
-                        plot.set_data(results[key][t, :, :])
-
-                    elif plt_type == 'Plot':
-                        if results[key].ndim == 3:
-                            for j, line in plot:
-                                line.set_ydata(results[key][t, :])
+                        if isinstance(subfigure, list):
+                            for plot, result in zip(subfigure, np.rollaxis(results[key], axis=-1)):
+                                plot.set_data(result[t])
                         else:
-                            plot[0].set_ydata(results[key][t, :])
+                            subfigure.set_data(results[key][t])
 
                     elif plt_type == 'Bar':
-                        for j, bar in enumerate(plot):
-                            bar.set_height(results[key][t, j])
+                        if isinstance(subfigure, list):
+                            for plot, result in zip(subfigure, np.rollaxis(results[key], axis=-1)):
+                                for j, bar in enumerate(plot):
+                                    bar.set_height(result[t, j])
+                        else:
+                            for j, bar in enumerate(subfigure):
+                                bar.set_height(results[key][t, j])
 
                     elif plt_type == 'Polar':
-                        for line in plot:
+                        for line in subfigure:
                             line.set_xdata((0, np.radians(results[key][t, 0])))
                             line.set_ydata((0, np.sqrt(results[key][t, 1] ** 2 + results[key][t, 2] ** 2)))
 
                     elif plt_type == 'Line':
-                        plot[0].set_ydata(results[key][t])
-                        plot[0].set_xdata(t)
+                        subfigure[0].set_ydata(results[key][t])
+                        subfigure[0].set_xdata(t)
 
             time_slider.on_changed(update)
 
@@ -305,34 +307,34 @@ class PopMonitor(object):
         else:
             def update_animate(t):
                 subplots = []
-                for key, plot, plt_type in ls:
-                    subplots.append(plot)
+                for key, subfigure, plt_type in plot_lists:
 
                     if plt_type == 'Matrix':
-                        plot.set_data(results[key][t])
-
-                    elif plt_type == 'Plot':
-                        if results[key].ndim == 3:
-                            for j, line in plot:
-                                line.set_ydata(results[key][t, :])
+                        if isinstance(subfigure, list):
+                            for plot, result in zip(subfigure, np.rollaxis(results[key], axis=-1)):
+                                plot.set_data(result[t])
                         else:
-                            plot[0].set_ydata(results[key][t, :])
+                            subfigure.set_data(results[key][t])
 
                     elif plt_type == 'Bar':
-                        for j, bar in enumerate(plot):
-                            bar.set_height(results[key][t, j])
+                        if isinstance(subfigure, list):
+                            for plot, result in zip(subfigure, np.rollaxis(results[key], axis=-1)):
+                                for j, bar in enumerate(plot):
+                                    bar.set_height(result[t, j])
+                        else:
+                            for j, bar in enumerate(subfigure):
+                                bar.set_height(results[key][t, j])
 
                     elif plt_type == 'Polar':
-                        for line in plot:
+                        for line in subfigure:
                             line.set_xdata((0, np.radians(results[key][t, 0])))
                             line.set_ydata((0, np.sqrt(results[key][t, 1] ** 2 + results[key][t, 2] ** 2)))
 
                     elif plt_type == 'Line':
-                        plot[0].set_ydata(results[key][t])
-                        plot[0].set_xdata(t)
+                        subfigure[0].set_ydata(results[key][t])
+                        subfigure[0].set_xdata(t)
 
-                return subplots
-
+            # make folder if not exists
             folder, _ = os.path.split(save_name)
             if folder and not os.path.exists(folder):
                 os.makedirs(folder)

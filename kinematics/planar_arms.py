@@ -182,6 +182,14 @@ class PlanarArms:
             return np.degrees((theta1, theta2))
 
     @staticmethod
+    def random_position(arm: str):
+        """
+        Returns random position within the joint limits.
+        """
+        new_theta = PlanarArms.random_theta()
+        return PlanarArms.forward_kinematics(arm=arm, thetas=new_theta, radians=True)[:, -1]
+
+    @staticmethod
     def __cos_space(start: float | np.ndarray, stop: float | np.ndarray, num: int):
         """
         For the calculation of gradients and trajectories. Derivation of this function is sin(x),
@@ -348,7 +356,7 @@ class PlanarArms:
             self.angles_right = self.trajectory_thetas_right[-1]
 
         elif moving_arm == 'left':
-            current_pos = self.end_effector_right[-1]
+            current_pos = self.end_effector_left[-1]
 
             angle, distance = PlanarArms.calc_motor_vector(init_pos=current_pos, end_pos=new_position,
                                                            arm=moving_arm)
