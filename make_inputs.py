@@ -8,9 +8,24 @@ from network.model import *
 from kinematics.planar_arms import PlanarArms
 
 
+def generate_random_coordinate(x_bounds_lower: float = parameters['x_reaching_space_limits'][0],
+                               x_bounds_upper: float = parameters['x_reaching_space_limits'][1],
+                               y_bounds_lower: float = parameters['y_reaching_space_limits'][0],
+                               y_bounds_upper: float = parameters['y_reaching_space_limits'][1],
+                               clip_border: float = 10.):
+
+    random_x = np.random.uniform(low=x_bounds_lower + clip_border,
+                                 high=x_bounds_upper - clip_border)
+
+    random_y = np.random.uniform(low=y_bounds_lower + clip_border,
+                                 high=y_bounds_upper - clip_border)
+
+    return [random_x, random_y]
+
+
 def make_inputs(start_point: list[float, float] | tuple[float, float],
                 end_point: list[float, float] | tuple[float, float],
-                distance_rate: float = 30.,
+                distance_rate: float = 40.,
                 trace_factor: float = .5,
                 training_trace: bool = True,
                 show_input: bool = False):
@@ -53,40 +68,34 @@ def train_position(init_position: np.ndarray,
                    trace: bool = True,
                    return_sim_time: bool = False) -> np.ndarray:
 
-    random_x = np.random.uniform(low=parameters['x_reaching_space_limits'][0],
-                                 high=parameters['x_reaching_space_limits'][1])
-    random_y = np.random.uniform(low=parameters['y_reaching_space_limits'][0],
-                                 high=parameters['y_reaching_space_limits'][1])
+    new_position = generate_random_coordinate()
 
+    # make input
     base_pm, base_s1, base_m1, distance = make_inputs(start_point=init_position,
-                                                      end_point=[random_x, random_y],
+                                                      end_point=new_position,
                                                       training_trace=trace)
 
     # simulation state
+    SNc.firing = 0
     PM.baseline = 0
     S1.baseline = 0
     CM.baseline = 0
     ann.simulate(t_wait)
 
-    # set inputs
-    S1.baseline = base_s1
-    CM.baseline = base_m1
-    ann.simulate(100.)
-
-    # send reward
+    # send reward and set inputs
     SNc.firing = 1
     PM.baseline = base_pm
+    S1.baseline = base_s1
+    CM.baseline = base_m1
     time = ann.simulate_until(t_reward, population=SNr)
-    SNc.firing = 0
-    PM.baseline = 0
 
     ann.reset(populations=True, monitors=False)
 
     # return new position
     if return_sim_time:
-        return np.array([random_x, random_y]), time
+        return np.array(new_position), time
     else:
-        return np.array([random_x, random_y])
+        return np.array(new_position)
 
 
 def train_fixed_position(init_position: np.ndarray,
@@ -99,22 +108,18 @@ def train_fixed_position(init_position: np.ndarray,
                                                       end_point=goal, training_trace=trace)
 
     # simulation state
+    SNc.firing = 0
     PM.baseline = 0
     S1.baseline = 0
     CM.baseline = 0
     ann.simulate(t_wait)
 
-    # set inputs
-    S1.baseline = base_s1
-    CM.baseline = base_m1
-    ann.simulate(100.)
-
-    # send reward
+    # send reward and set inputs
     SNc.firing = 1
     PM.baseline = base_pm
+    S1.baseline = base_s1
+    CM.baseline = base_m1
     ann.simulate_until(t_reward, population=SNr)
-    SNc.firing = 0
-    PM.baseline = 0
 
     ann.reset(populations=True, monitors=False)
 
@@ -167,8 +172,8 @@ def sim_movement_m1_input(arm: str,
 
     if points_to_follow is None:
         points_to_follow = []
-        for _ in range(2):
-            points_to_follow.append(PlanarArms.random_position(arm))
+        for _ in range(5):
+            points_to_follow.append(generate_random_coordinate())
 
     # disable learning
     if plasticity:

@@ -20,8 +20,7 @@ def test_closed_loop(arm: str, plasticity: bool = True):
     sim_movement_m1_input(arm, plasticity=plasticity)
 
     monitors.animate_rates(
-        plot_types=['Matrix', 'Matrix', 'Bar', 'Bar', 'Bar', 'Bar', 'Line', 'Polar'],
-        save_name='test.gif'
+        plot_types=['Matrix', 'Matrix', 'Bar', 'Bar', 'Bar', 'Bar', 'Line', 'Polar']
     )
 
     # save monitors

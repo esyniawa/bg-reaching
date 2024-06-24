@@ -1,6 +1,9 @@
 import ANNarchy as ann
 
 baseline_dopa = ann.Constant('baseline_dopa', 0.1)
+baseline_snr = ann.Constant('baseline_snr', 1.0)
+
+ann.add_function('logistic(x) = 0.5 + 1 / (1 + exp(-3.5 * (x - 1)))')
 
 # Neuron definitions
 PoolingNeuron = ann.Neuron(
@@ -54,20 +57,20 @@ StriatumD1Neuron = ann.Neuron(
     """,
     equations="""
         tau*dmp/dt + mp = sum(mod) * (sum(exc) - sum(inh)) + noise*Uniform(-1.0,1.0) + baseline
-        r = mp : min = 0.0
+        r = if (mp > 1.0): logistic(mp)
+            else: pos(mp)
     """
 )
 
 SNrNeuron = ann.Neuron(
     parameters="""
         tau = 10.0 : population
-        baseline = 0.0 : population
         noise = 0.0 : population
         alpha = 0.8 : population
     """,
     equations="""
-        tau*dmp/dt + mp = sum(exc) - sum(inh) + noise*Uniform(-1.0,1.0) + baseline
-        r = mp : min = 0.0
+        tau*dmp/dt + mp = sum(exc) - sum(inh) + noise*Uniform(-1.0,1.0) + baseline_snr
+        r = mp : min = 0.0, init = baseline_snr
         
         r_mean = alpha * r_mean + (1 - alpha) * r
     """
@@ -108,13 +111,13 @@ PostCovarianceNoThreshold = ann.Synapse(
         K_burst = 1.0 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection
-        threshold_pre = 0.0 : projection
+        threshold_pre = 0.05 : projection
         threshold_post = 0.05 : projection
     """,
     equations="""
         tau_alpha*dalpha/dt  + alpha = pos(post.mp - regularization_threshold)
         dopa_sum = 2.0*(post.sum(dopa) - baseline_dopa)
-        trace = pos(post.r -  mean(post.r) - threshold_post) * (pre.r - mean(pre.r) - threshold_pre)
+        trace = pos(post.r -  mean(post.r) - threshold_post) * (pre.r - threshold_pre)
         condition_0 = if (trace>0.0) and (w >0.0): 1 else: 0
         dopa_mod =  if (DA_type*dopa_sum>0): DA_type*K_burst*dopa_sum
                     else: condition_0*DA_type*K_dip*dopa_sum
@@ -148,9 +151,32 @@ PreCovariance_inhibitory = ann.Synapse(
     """
 )
 
+PreCovariance_inhibitory_modified = ann.Synapse(
+    parameters="""
+        tau=10.0 : projection
+        tau_alpha=10.0 : projection
+        regularization_threshold = 1.2 : projection
+        K_burst = 1.5 : projection
+        K_dip = 0.4 : projection
+        DA_type = 1 : projection
+        threshold_pre = 0.0 : projection
+        threshold_post = 0.0 : projection
+        negterm = 1 : projection
+    """,
+    equations="""
+        tau_alpha*dalpha/dt = pos( -post.mp - regularization_threshold) - alpha
+        dopa_sum = 2.0*(post.sum(dopa) - baseline_dopa)
+        trace = pos(pre.r - mean(pre.r) - threshold_pre) * (post.r_mean - post.r - threshold_post)
+        aux = if (trace>0): negterm else: 0
+        dopa_mod = if (DA_type*dopa_sum>0): DA_type*K_burst*dopa_sum else: aux*DA_type*K_dip*dopa_sum
+        tau*dweight/dt = dopa_mod * trace - alpha * pos(trace)
+        w = weight : min = 0.0
+    """
+)
+
 DAPrediction = ann.Synapse(
     parameters="""
-        tau = 10000.0 : projection
+        tau = 2000.0 : projection
    """,
    equations="""
        aux = if (post.mp>0): 1.0 else: 3.0

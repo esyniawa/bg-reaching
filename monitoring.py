@@ -185,6 +185,35 @@ class PopMonitor(object):
                     plots = ax.imshow(results[key][t_init], vmin=-res_max, vmax=res_max, cmap='RdBu',
                                       origin='lower', interpolation='none')
 
+            elif plot_type == 'Plot':
+                if results[key].ndim > 4:
+                    results[key] = PopMonitor._reshape(results[key])
+                res_max = np.amax(abs(results[key]))
+
+                # subplots
+                if results[key].ndim == 4:
+                    last_dim = results[key].shape[-1]
+                    inner_rows, inner_cols = find_largest_factors(last_dim)
+
+                    # add subsubplots
+                    axs = subfig.subplots(inner_rows, inner_cols)
+                    plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95, wspace=0.05, hspace=0.05)
+
+                    plots = []
+                    for ax, result in zip(axs.flat, np.rollaxis(results[key][t_init], -1)):
+                        p = ax.plot(result)
+                        # set off tick labels for better arrangement
+                        ax.set_xticks([])
+                        ax.set_yticks([])
+                        ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
+
+                        plots.append(p)
+                else:
+                    ax = subfig.subplots()
+                    plots = ax.plots(results[t_init])
+                    ax.set_ylabel('Activity')
+                    ax.set_xlabel(self.variables[outer_i], loc='right')
+
             elif plot_type == 'Bar':
 
                 if results[key].ndim > 3:
