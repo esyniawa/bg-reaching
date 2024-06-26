@@ -116,6 +116,7 @@ class PopMonitor(object):
         return m.reshape(shape)
 
     def animate_rates(self,
+                      dicts: dict | None = None,
                       plot_order: tuple[int, int] | None = None,
                       plot_types: str | list | tuple = 'Bar',
                       fig_size: tuple[float, float] | list[float, float] = (10, 10),
@@ -130,7 +131,10 @@ class PopMonitor(object):
         import matplotlib.animation as animation
 
         # get results
-        results = self.get(delete=False, reshape=True)
+        if dicts is None:
+            results = self.get(delete=False, reshape=True)
+        else:
+            results = dicts
 
         # define plot layout
         if plot_order is None:
@@ -212,7 +216,6 @@ class PopMonitor(object):
                     ax = subfig.subplots()
                     plots = ax.plots(results[t_init])
                     ax.set_ylabel('Activity')
-                    ax.set_xlabel(self.variables[outer_i], loc='right')
 
             elif plot_type == 'Bar':
 
@@ -231,7 +234,6 @@ class PopMonitor(object):
                         p = ax.bar(x=np.arange(1, result.shape[1] + 1, 1), height=result, width=0.5)
 
                         ax.set_ylabel('Activity')
-                        ax.set_xlabel(self.variables[outer_i], loc='right')
                         ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
 
                         plots.append(p)
@@ -240,7 +242,6 @@ class PopMonitor(object):
                     plots = ax.bar(x=np.arange(1, results[key].shape[1] + 1, 1), height=results[key][t_init], width=0.5)
 
                     ax.set_ylabel('Activity')
-                    ax.set_xlabel(self.variables[outer_i], loc='right')
                     ax.set_ylim([0, ceil(res_max + 0.1, precision=1)])
 
             elif plot_type == 'Polar':
@@ -377,6 +378,12 @@ class PopMonitor(object):
 
             ani.save(save_name, writer=writer)
             plt.close(fig)
+
+    @staticmethod
+    def load_and_animate(folder: str,
+                         pops: list[str] | tuple[str],
+                         plot_types: list[str] | tuple[str] | None):
+        pass
 
     def animate_population_3D(self,
                               pop_name: str,

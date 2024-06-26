@@ -63,7 +63,7 @@ def make_inputs(start_point: list[float, float] | tuple[float, float],
 
 
 def train_position(init_position: np.ndarray,
-                   t_reward: float = 300.,
+                   t_reward: float = 350.,
                    t_wait: float = 50.,
                    trace: bool = True,
                    return_sim_time: bool = False) -> np.ndarray:
@@ -164,31 +164,26 @@ def test_movement(scale_movement: float = 1.0,
         ann.reset(monitors=False)
 
 
-def sim_movement_m1_input(arm: str,
-                          points_to_follow: list[np.ndarray] | None = None,
-                          sim_time: float = 500.,
-                          plasticity: bool = True,
-                          t_wait: float = 50.) -> None:
-
-    if points_to_follow is None:
-        points_to_follow = []
-        for _ in range(5):
-            points_to_follow.append(generate_random_coordinate())
+def sim_movement_m1_input(sim_time: float = 500.,
+                          plasticity_snr: bool = True,
+                          plasticity_m1: bool = False,
+                          t_wait: float = 50.):
 
     # disable learning
-    if plasticity:
-        ann.enable_learning()
+    if plasticity_snr:
+        StrD1_SNr.enable_learning()
     else:
-        ann.disable_learning()
+        StrD1_SNr.disable_learning()
 
-    n_points = len(points_to_follow)
+    # calculate motor input
+    motor_inputs = np.arange(0, 360, step=parameters['motor_step_size'])
+
+    mean_d1_activities = []
     # simulate movement
-    for i, point in enumerate(points_to_follow):
+    for motor_input in motor_inputs:
 
-        # make inputs for PM
-        _, input_s1, input_m1, _ = make_inputs(start_point=point,
-                                        end_point=points_to_follow[(i+1) % n_points],
-                                        training_trace=False)
+        input_m1 = circ_gauss(mu=motor_input, sigma=parameters['sig_m1'],
+                              n=parameters['dim_motor'], scal=parameters['motor_step_size'], norm=False)
 
         # simulation state
         SNc.firing = 0
@@ -199,7 +194,10 @@ def sim_movement_m1_input(arm: str,
 
         # set inputs
         SNc.firing = 1
-        S1.baseline = input_s1
+        S1.baseline = 1.0
         CM.baseline = input_m1
         ann.simulate(sim_time)
 
+        mean_d1_activities.append(np.mean(StrD1.r, axis=2))
+
+    return np.array(mean_d1_activities)

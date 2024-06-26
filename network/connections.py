@@ -180,3 +180,15 @@ def laterals_layerwise(Dim, axis,
     w = w.reshape((np.prod(Dim), np.prod(Dim)))
 
     return w
+
+def connect_gaussian_circle(Dim: int, sd: float, scale: float,
+                            A: float = 1.0, limit: float | None = 0.001):
+
+    from .utils import circ_gauss
+
+    w = np.zeros((Dim, Dim))
+
+    for i in range(Dim):
+        w[i, :] = A * circ_gauss(mu=i*scale, sigma=sd, scal=scale, n=Dim, norm=False, limit=limit)
+
+    return w.T

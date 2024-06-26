@@ -21,7 +21,7 @@ parameters = {
 parameters['motor_orientations'] = np.linspace(0, 360, parameters['dim_motor'], endpoint=False)
 parameters['motor_step_size'] = parameters['motor_orientations'][1]
 
-parameters['sig_s1'] = 80.  # in [mm]
+parameters['sig_s1'] = 120.  # in [mm]
 parameters['sig_pm'] = 80.  # in [mm]
 
 parameters['dim_bg'] = parameters['dim_motor']

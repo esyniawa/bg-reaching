@@ -107,8 +107,8 @@ PostCovarianceNoThreshold = ann.Synapse(
     parameters="""
         tau = 1000.0 : projection
         tau_alpha = 10.0 : projection
-        regularization_threshold = 2.0 : projection
-        K_burst = 1.0 : projection
+        regularization_threshold = 1.0 : projection
+        K_burst = 1.2 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection
         threshold_pre = 0.05 : projection
@@ -156,7 +156,7 @@ PreCovariance_inhibitory_modified = ann.Synapse(
         tau=10.0 : projection
         tau_alpha=10.0 : projection
         regularization_threshold = 1.2 : projection
-        K_burst = 1.5 : projection
+        K_burst = 2.0 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection
         threshold_pre = 0.0 : projection
@@ -183,4 +183,40 @@ DAPrediction = ann.Synapse(
        delta = aux*pos(post.r - baseline_dopa)*pos(pre.r - mean(pre.r))
        tau*dw/dt = delta : min = 0.0
    """
+)
+
+CorticalLearning = ann.Synapse(
+    parameters="""
+        tau = 10000. : projection
+        rho = 1. : projection
+        threshold_pre = 0.1 : projection
+    """,
+    equations="""
+        tau dw/dt = pos(pre.r - threshold_pre) * post.r - rho * post.r
+    """,
+    description="STDP rule for inhibitory synapses introduced by Vogels et al. (2011)."
+)
+
+LearningMT = ann.Synapse(
+    parameters ="""
+        LearnTau = 130000 : projection
+        minweight = 0.0 : projection
+        alpha = 1.0 : projection
+    """,
+    equations = """            
+        LearnTau * dw/dt = (pre.r - mean(pre.r)) * post.r - alpha * post.r^2 * w : min = minweight, init = 0.0
+    """
+)
+
+
+NewAntihebb = ann.Synapse(
+    parameters ="""
+        TauAH = 100000 : projection
+        alpha = 1 : projection
+        gamma = 1 : projection
+        rho = 0.06 : projection        
+    """,
+    equations = """    
+        TauAH * dw/dt = pre.r * post.r - pre.r * rho * (gamma + alpha * w) : min = 0.0, init =0.0
+    """
 )

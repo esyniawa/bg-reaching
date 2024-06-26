@@ -20,6 +20,8 @@ for durchgang in $(seq $durchgaenge); do
 	sleep 5
 done
 
+python validate_reaching.py 0 $trials;
+
 endTime=$(date +%s)
 dif=$((endTime - startTime))
 echo $dif >> zeit.txt

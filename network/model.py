@@ -25,7 +25,7 @@ GPe.noise = 0.01
 GPe.baseline = 0.2
 
 SNr = ann.Population(geometry=parameters['dim_bg'], neuron=SNrNeuron, name='SNr', stop_condition='r<0.1',)
-SNr.noise = 0.05
+SNr.noise = 0.01
 
 VL = ann.Population(geometry=parameters['dim_bg'], neuron=LinearNeuron, name='VL')
 VL.noise = 0.01
