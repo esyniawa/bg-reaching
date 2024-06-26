@@ -2,7 +2,7 @@ import ANNarchy as ann
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-
+from typing import Iterable
 
 def ceil(a: float, precision: int = 0):
     """
@@ -31,6 +31,21 @@ def find_largest_factors(c: int):
             return b, a
     return 1, c
 
+def numpy_reshape(m: np.ndarray, dim: int = 2):
+    """
+    Reshapes matrix m into a desired dim-dimensional array
+    :param m:
+    :param dim:
+    :return:
+    """
+    shape = m.shape
+
+    for i in range(m.ndim, dim, -1):
+        new_shape = list(shape[:-1])
+        new_shape[-1] = shape[-1] * shape[-2]
+        shape = new_shape
+
+    return m.reshape(shape)
 
 class PopMonitor(object):
     def __init__(self, populations: tuple | list,
@@ -428,53 +443,53 @@ class PopMonitor(object):
         PopMonitor.animate_rates(results=results,
                                  plot_types=plot_types)
 
-    def weight_difference(self,
-                          plot_order: tuple[int, int],
-                          fig_size: tuple[float, float] | list[float, float],
-                          save_name: str = None):
-        """
-        Plots weight difference with imshow. Weights are normally recorded in [time, pre_synapse, post_synapse].
-        :param plot_order:
-        :param fig_size:
-        :param save_name:
-        :return:
-        """
-
-        ncols, nrows = plot_order
-        results = self.get(delete=False)
-
-        fig = plt.figure(figsize=fig_size)
-        for i, key in enumerate(results):
-            plt.subplot(ncols, nrows, i + 1)
-
-            difference = results[key][-1, :, :] - results[key][0, :, :]
-            x_axis = np.arange(0, len(difference.T))
-            plt.plot(difference.T)
-            plt.xticks(x_axis, x_axis+1)
-            plt.xlabel('pre-synaptic neuron', loc='right')
-            plt.title(key + ' : Weight difference', loc='left')
-
-        if save_name is None:
-            plt.show()
-        else:
-            folder, _ = os.path.split(save_name)
-            if folder and not os.path.exists(folder):
-                os.makedirs(folder)
-
-            plt.savefig(save_name)
-            plt.close(fig)
-
 
 class ConMonitor(object):
-    def __init__(self, connections):
+    def __init__(self, connections: list,
+                 reshape_pre: list[bool] | None = None,
+                 reshape_post: list[bool] | None = None):
+
         self.connections = connections
         self.weight_monitors = {}
         for con in connections:
             self.weight_monitors[con.name] = []
 
+        if reshape_pre is None:
+            self.reshape_pre = [False] * len(self.connections)
+        else:
+            self.reshape_pre = reshape_pre
+
+        if reshape_post is None:
+            self.reshape_post = [False] * len(self.connections)
+        else:
+            self.reshape_post = reshape_post
+
     def extract_weights(self):
-        for con in self.connections:
-            weights = np.array([dendrite.w for dendrite in con])
+        for i, con in enumerate(self.connections):
+
+            if self.reshape_post[i] or self.reshape_pre[i]:
+
+                pre_dim, post_dim = con.pre.geometry, con.post.geometry
+                # reshape pre
+                if self.reshape_pre[i] and isinstance(pre_dim, tuple):
+                    pre_shape = list(pre_dim)
+                elif not self.reshape_pre[i] and isinstance(pre_dim, tuple):
+                    pre_shape = [np.prod(pre_dim)]
+                else:
+                    pre_shape = [pre_dim]
+
+                # reshape post
+                if self.reshape_post[i] and isinstance(post_dim, tuple):
+                    post_shape = list(post_dim)
+                elif not self.reshape_post[i] and isinstance(post_dim, tuple):
+                    post_shape = [np.prod(post_dim)]
+                else:
+                    post_shape = [post_dim]
+
+                weights = np.array([dendrite.w for dendrite in con]).reshape(post_shape + pre_shape)
+            else:
+                weights = np.array([dendrite.w for dendrite in con])
+
             self.weight_monitors[con.name].append(weights)
 
     def save_cons(self, folder: str):
@@ -494,3 +509,75 @@ class ConMonitor(object):
     def reset(self):
         for con in self.connections:
             self.weight_monitors[con.name] = []
+
+    def current_weight_diff(self,
+                            t_init: int = 0, t_end: int = -1,
+                            plot_order: tuple[int, int] | None = None,
+                            fig_size: tuple[float, float] | list[float, float] = (10, 10),
+                            save_name: str = None):
+
+        ConMonitor.weight_difference(self.weight_monitors,
+                                     t_init=t_init, t_end=t_end,
+                                     plot_order=plot_order,
+                                     fig_size=fig_size,
+                                     save_name=save_name)
+
+    @staticmethod
+    def weight_difference(monitors: dict,
+                          t_init: int = 0, t_end: int = -1,
+                          plot_order: tuple[int, int] | None = None,
+                          fig_size: tuple[float, float] | list[float, float] = (10, 10),
+                          save_name: str = None):
+        """
+        Function to calculate the weight difference based on the provided monitors.
+        """
+
+        if plot_order is None:
+            ncols, nrows = find_largest_factors(len(monitors))
+        else:
+            ncols, nrows = plot_order
+            if nrows * ncols <= len(monitors):
+                raise ValueError
+
+        fig = plt.figure(constrained_layout=True, figsize=fig_size)
+        subfigs = fig.subfigures(nrows, ncols)
+
+        if len(monitors) > 1:
+            s = subfigs.flat
+        else:
+            s = [subfigs]
+
+        for outer_i, (subfig, key) in enumerate(zip(s, monitors)):
+            subfig.suptitle(key)
+
+            result = monitors[key][t_end] - monitors[key][t_init]
+            # type of plot is dependent on dimension
+            if result.ndim == 1:
+                # plot
+                ax = subfig.subplots()
+                ax.plot(np.arange(len(result)) + 1, result)
+            elif result.ndim == 2:
+                # imshow
+                ax = subfig.subplots()
+                ax.imshow(result, cmap='RdBu', origin='lower', interpolation='none')
+            else:
+                if result.ndim > 3:
+                    result = numpy_reshape(result, dim=3)
+
+                sub_rows, sub_cols = find_largest_factors(result.shape[0])
+                axs = subfig.subplots(nrows=sub_rows, ncols=sub_cols)
+
+                for inner_i, ax in enumerate(axs.flat):
+                    ax.imshow(result[inner_i], cmap='RdBu', origin='lower', interpolation='none',
+                              vmax=np.amax(result), vmin=np.amin(result))
+                    ax.tick_params(axis="both", labelsize=4 + 24/result.shape[0])
+
+        if save_name is None:
+            plt.show()
+        else:
+            folder, _ = os.path.split(save_name)
+            if folder and not os.path.exists(folder):
+                os.makedirs(folder)
+
+            plt.savefig(save_name)
+            plt.close(fig)

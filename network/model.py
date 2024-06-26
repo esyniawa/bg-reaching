@@ -82,7 +82,7 @@ PopCode_norm = ann.Projection(pre=M1, post=Output_Pop[0], target='norm')
 PopCode_norm.connect_all_to_all(1.0)
 
 # Feedback connection
-M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc')
+M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc', synapse=CorticalLearning)
 M1_StrD1.connect_all_to_all(ann.Uniform(min=0.0, max=0.5))
 
 # Reward prediction

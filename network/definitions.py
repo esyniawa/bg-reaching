@@ -189,10 +189,10 @@ CorticalLearning = ann.Synapse(
     parameters="""
         tau = 10000. : projection
         rho = 1. : projection
-        threshold_pre = 0.1 : projection
+        threshold_pre = 0.0 : projection
     """,
     equations="""
-        tau dw/dt = pos(pre.r - threshold_pre) * post.r - rho * post.r
+        tau * dw/dt = pos(pre.r - threshold_pre) * post.r - rho * post.r
     """,
     description="STDP rule for inhibitory synapses introduced by Vogels et al. (2011)."
 )

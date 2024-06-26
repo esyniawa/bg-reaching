@@ -19,7 +19,8 @@ def test_closed_loop(plasticity: bool = True):
     # training
     monitors_cons.extract_weights()
 
-    mean_d1 = sim_movement_m1_input(plasticity_snr=plasticity)
+    mean_d1 = sim_movement_m1_input(plasticity_snr=False,
+                                    plasticity_m1=plasticity)
 
     monitors.animate_current_monitors(
         plot_types=['Matrix', 'Bar', 'Bar', 'Bar']
