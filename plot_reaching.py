@@ -4,9 +4,9 @@ import numpy as np
 from monitoring import PopMonitor
 
 sim_id = 2
-plot_weights = True
+plot_weights = False
 plot_positions = False
-animate_str = True
+animate_rates = True
 
 if plot_weights:
     weight_names = ['w_D1_SNr.npy', 'w_PM_D1.npy']
@@ -15,9 +15,7 @@ if plot_weights:
         data_path = f'results/training_run_model_{sim_id}/' + weight_name
         data = np.load(data_path)
 
-
         fig, ax = plt.subplots()
-
         ax.imshow(data[1] - data[0], vmin=0, vmax=np.amax(data), cmap='Blues')
 
         ax.set_xlabel('pre-synaptic neuron', loc='right')
@@ -78,3 +76,19 @@ if plot_positions:
 
         plt.show()
         plt.close(fig)
+
+if animate_rates:
+    from monitoring import PopMonitor
+
+    training = True
+    if training:
+        folder = f'results/training_run_model_{sim_id}/'
+    else:
+        folder = f'results/test_run_model_{sim_id}/'
+
+    populations = ['r_PM', 'r_S1', 'r_StrD1', 'r_SNr', 'r_VL', 'r_M1']
+    plot_types = ['Matrix', 'Matrix', 'Matrix', 'Bar', 'Bar', 'Bar']
+
+    PopMonitor.load_and_animate(folder=folder,
+                                pops=populations,
+                                plot_types=plot_types)

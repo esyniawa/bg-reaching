@@ -21,7 +21,7 @@ def test_closed_loop(plasticity: bool = True):
 
     mean_d1 = sim_movement_m1_input(plasticity_snr=plasticity)
 
-    monitors.animate_rates(
+    monitors.animate_current_monitors(
         plot_types=['Matrix', 'Bar', 'Bar', 'Bar']
     )
 
