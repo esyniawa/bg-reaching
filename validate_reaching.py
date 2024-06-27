@@ -28,7 +28,9 @@ if __name__ == '__main__':
     # init monitors
     folder = f'validate_model_{sim_id}/'
     training_monitors = PopMonitor(pops_monitor, auto_start=False, sampling_rate=50.)
-    training_cons = ConMonitor([PM_StrD1, StrD1_SNr])
+    training_cons = ConMonitor([PM_StrD1, StrD1_SNr, M1_StrD1],
+                               reshape_pre=[False, True, False],
+                               reshape_post=[True, False, True])
 
     test_monitors = PopMonitor(pops_monitor, auto_start=False, sampling_rate=1.0)
 

@@ -24,6 +24,9 @@ parameters['motor_step_size'] = parameters['motor_orientations'][1]
 parameters['sig_s1'] = 120.  # in [mm]
 parameters['sig_pm'] = 80.  # in [mm]
 
+parameters['sig_vl_m1'] = 20  # in [°]
+parameters['A_vl_m1'] = 0.7
+
 parameters['dim_bg'] = parameters['dim_motor']
 
 parameters['strength_efference_copy'] = 0.4

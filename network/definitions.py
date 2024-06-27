@@ -126,6 +126,29 @@ PostCovarianceNoThreshold = ann.Synapse(
     """
 )
 
+# DA_typ = 1  ==> D1 type  DA_typ = -1 ==> D2 type
+PostCovarianceNoThreshold_modified = ann.Synapse(
+    parameters="""
+        tau = 1000.0 : projection
+        tau_alpha = 10.0 : projection
+        regularization_threshold = 1.0 : projection
+        K_burst = 1.2 : projection
+        K_dip = 0.4 : projection
+        DA_type = 1 : projection
+        threshold_pre = 0.05 : projection
+        threshold_post = 0.05 : projection
+    """,
+    equations="""
+        tau_alpha*dalpha/dt  + alpha = pos(post.mp - regularization_threshold)
+        dopa_sum = 2.0*(post.sum(dopa) - baseline_dopa)
+        trace = pos(post.r - post.r_mean - threshold_post) * (pre.r - threshold_pre)
+        condition_0 = if (trace>0.0) and (w >0.0): 1 else: 0
+        dopa_mod =  if (DA_type*dopa_sum>0): DA_type*K_burst*dopa_sum
+                    else: condition_0*DA_type*K_dip*dopa_sum
+        delta = dopa_mod * trace - alpha*pos(post.r - mean(post.r) - threshold_post)
+        tau*dw/dt = delta : min = 0.0
+    """
+)
 
 # Inhibitory synapses STRD1 -> SNr
 PreCovariance_inhibitory = ann.Synapse(
@@ -159,7 +182,7 @@ PreCovariance_inhibitory_modified = ann.Synapse(
         K_burst = 2.0 : projection
         K_dip = 0.4 : projection
         DA_type = 1 : projection
-        threshold_pre = 0.0 : projection
+        threshold_pre = 0.1 : projection
         threshold_post = 0.0 : projection
         negterm = 1 : projection
     """,
@@ -199,7 +222,7 @@ CorticalLearning = ann.Synapse(
 
 LearningMT = ann.Synapse(
     parameters ="""
-        LearnTau = 130000 : projection
+        LearnTau = 10000 : projection
         minweight = 0.0 : projection
         alpha = 1.0 : projection
     """,
@@ -207,7 +230,6 @@ LearningMT = ann.Synapse(
         LearnTau * dw/dt = (pre.r - mean(pre.r)) * post.r - alpha * post.r^2 * w : min = minweight, init = 0.0
     """
 )
-
 
 NewAntihebb = ann.Synapse(
     parameters ="""
@@ -219,4 +241,14 @@ NewAntihebb = ann.Synapse(
     equations = """    
         TauAH * dw/dt = pre.r * post.r - pre.r * rho * (gamma + alpha * w) : min = 0.0, init =0.0
     """
+)
+
+MiehlExc = ann.Synapse(
+    parameters="""
+		tau_W = 10000 : projection
+        alpha = 0.5  : projection
+	""",
+    equations="""
+    	tau_W * dw/dt = pre.r * post.r * (post.r - alpha) : min = 0.0
+	""",
 )

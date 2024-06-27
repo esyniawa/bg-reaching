@@ -70,7 +70,9 @@ SNr_VL = ann.Projection(pre=SNr, post=VL, target='inh')
 SNr_VL.connect_one_to_one(1.0)
 
 VL_M1 = ann.Projection(pre=VL, post=M1, target='exc')
-VL_M1.connect_one_to_one(1.0)
+w_vl_m1 = connect_gaussian_circle(Dim=parameters['dim_bg'], scale=parameters['sig_m1'],
+                                  sd=parameters['sig_vl_m1'], A=parameters['A_vl_m1'])
+VL_M1.connect_from_matrix(w_vl_m1)
 
 # Output projection
 PopCode_out = ann.Projection(pre=M1, post=Output_Pop, target='exc')
@@ -82,7 +84,7 @@ PopCode_norm = ann.Projection(pre=M1, post=Output_Pop[0], target='norm')
 PopCode_norm.connect_all_to_all(1.0)
 
 # Feedback connection
-M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc', synapse=CorticalLearning)
+M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc', synapse=LearningMT)
 M1_StrD1.connect_all_to_all(ann.Uniform(min=0.0, max=0.5))
 
 # Reward prediction
@@ -94,7 +96,7 @@ SNr_SNr = ann.Projection(pre=SNr, post=SNr, target='exc', synapse=ReversedSynaps
 SNr_SNr.connect_all_to_all(0.1)
 
 StrD1_StrD1 = ann.Projection(pre=StrD1, post=StrD1, target='inh')
-wD1_D1 = laterals_layerwise(Dim=StrD1.geometry, axis=2, weight=0.2)
+wD1_D1 = laterals_layerwise(Dim=StrD1.geometry, axis=2, weight=0.25)
 StrD1_StrD1.connect_from_matrix(wD1_D1)
 
 M1_M1 = ann.Projection(pre=M1, post=M1, target='inh')
