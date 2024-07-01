@@ -4,6 +4,7 @@ import numpy as np
 import os
 from typing import Iterable
 
+
 def ceil(a: float, precision: int = 0):
     """
     Calculate the ceiling value of a number 'a' with a specified precision.
@@ -31,6 +32,7 @@ def find_largest_factors(c: int):
             return b, a
     return 1, c
 
+
 def numpy_reshape(m: np.ndarray, dim: int = 2):
     """
     Reshapes matrix m into a desired dim-dimensional array
@@ -46,6 +48,7 @@ def numpy_reshape(m: np.ndarray, dim: int = 2):
         shape = new_shape
 
     return m.reshape(shape)
+
 
 class PopMonitor(object):
     def __init__(self, populations: tuple | list,
@@ -560,10 +563,7 @@ class ConMonitor(object):
                 # imshow
                 ax = subfig.subplots()
                 ax.imshow(result, cmap='RdBu', origin='lower', interpolation='none')
-            else:
-                if result.ndim > 3:
-                    result = numpy_reshape(result, dim=3)
-
+            elif result.ndim == 3:
                 sub_rows, sub_cols = find_largest_factors(result.shape[0])
                 axs = subfig.subplots(nrows=sub_rows, ncols=sub_cols)
 
@@ -571,6 +571,20 @@ class ConMonitor(object):
                     ax.imshow(result[inner_i], cmap='RdBu', origin='lower', interpolation='none',
                               vmax=np.amax(result), vmin=np.amin(result))
                     ax.tick_params(axis="both", labelsize=4 + 24/result.shape[0])
+            else:
+                if result.ndim > 4:
+                    result = numpy_reshape(result, dim=4)
+
+                dim1 = result.shape[0]
+                dim2 = result.shape[1]
+
+                sub_rows, sub_cols = find_largest_factors(dim1 * dim2)
+                axs = subfig.subplots(nrows=sub_rows, ncols=sub_cols)
+
+                for inner_i, ax in enumerate(axs.flat):
+                    ax.imshow(result[int(inner_i%dim1), int(inner_i%dim2)], cmap='RdBu', origin='lower', interpolation='none',
+                              vmax=np.amax(result), vmin=np.amin(result))
+                    ax.tick_params(axis="both", labelsize=4 + 24 / result.shape[0])
 
         if save_name is None:
             plt.show()
@@ -581,3 +595,33 @@ class ConMonitor(object):
 
             plt.savefig(save_name)
             plt.close(fig)
+
+    @staticmethod
+    def load_and_plot_wdiff(folder: str,
+                            cons: list[str] | tuple[str],
+                            fig_size: tuple[float, float] | None = None,
+                            save_name: str | None = None):
+
+        import glob
+        # Assignment of the populations to the files
+        file_list = []
+        for con in cons:
+            file_list += [file for file in glob.glob(folder + '*.npy') if con in file]
+
+        # Load data
+        for file in file_list:
+            results = {}
+
+            _, name = os.path.split(file)
+            results[name[:-4]] = np.load(file)
+
+            if save_name is not None:
+                save_name += '_' + name[:-4]
+
+            if fig_size is None:
+                fig_size = find_largest_factors(np.prod(results[name[:-4]].shape[0:1]))
+                fig_size = np.array(fig_size) * 10
+
+            ConMonitor.weight_difference(monitors=results,
+                                         fig_size=fig_size,
+                                         save_name=save_name)

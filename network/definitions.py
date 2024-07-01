@@ -222,7 +222,7 @@ CorticalLearning = ann.Synapse(
 
 LearningMT = ann.Synapse(
     parameters ="""
-        LearnTau = 10000 : projection
+        LearnTau = 1000. : projection
         minweight = 0.0 : projection
         alpha = 1.0 : projection
     """,
@@ -233,7 +233,7 @@ LearningMT = ann.Synapse(
 
 NewAntihebb = ann.Synapse(
     parameters ="""
-        TauAH = 100000 : projection
+        TauAH = 10000. : projection
         alpha = 1 : projection
         gamma = 1 : projection
         rho = 0.06 : projection        

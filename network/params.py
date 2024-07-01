@@ -40,4 +40,4 @@ state_space = create_state_space(
 )
 
 parameters['dim_s1'] = state_space.shape[:-1]
-parameters['dim_str'] = tuple(list(parameters['dim_s1']) + [20])
+parameters['dim_str'] = tuple(list(parameters['dim_s1']) + [25])

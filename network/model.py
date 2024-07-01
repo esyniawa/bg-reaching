@@ -84,7 +84,7 @@ PopCode_norm = ann.Projection(pre=M1, post=Output_Pop[0], target='norm')
 PopCode_norm.connect_all_to_all(1.0)
 
 # Feedback connection
-M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc', synapse=LearningMT)
+M1_StrD1 = ann.Projection(pre=M1, post=StrD1, target='exc', synapse=LearningMT, name="M1_StrD1")
 M1_StrD1.connect_all_to_all(ann.Uniform(min=0.0, max=0.5))
 
 # Reward prediction
@@ -93,7 +93,7 @@ StrD1_SNc.connect_all_to_all(weights=0.0)
 
 # Laterals
 SNr_SNr = ann.Projection(pre=SNr, post=SNr, target='exc', synapse=ReversedSynapse)
-SNr_SNr.connect_all_to_all(0.1)
+SNr_SNr.connect_all_to_all(0.2)
 
 StrD1_StrD1 = ann.Projection(pre=StrD1, post=StrD1, target='inh')
 wD1_D1 = laterals_layerwise(Dim=StrD1.geometry, axis=2, weight=0.25)

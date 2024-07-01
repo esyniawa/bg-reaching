@@ -3,10 +3,11 @@ import numpy as np
 
 from monitoring import PopMonitor
 
-sim_id = 2
+sim_id = 1
 plot_weights = False
 plot_positions = False
-animate_rates = True
+animate_rates = False
+plot_weights_diff = True
 
 if plot_weights:
     weight_names = ['w_D1_SNr.npy', 'w_PM_D1.npy']
@@ -92,3 +93,12 @@ if animate_rates:
     PopMonitor.load_and_animate(folder=folder,
                                 pops=populations,
                                 plot_types=plot_types)
+
+if plot_weights_diff:
+    from monitoring import ConMonitor
+
+    folder = f'results/training_run_model_{sim_id}/'
+
+    connections = ['w_D1_SNr', 'w_proj12']
+    ConMonitor.load_and_plot_wdiff(folder=folder, cons=connections, fig_size=(30, 20))
+
